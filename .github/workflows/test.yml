@@ -51,8 +51,8 @@ jobs:
           exit 1
         fi
 
-    # 4. FizzBuzz
-    - name: 4. Application Test (FizzBuzz)
+    # 4. FizzBuzz (Python Transpilation)
+    - name: 4. Application Test (FizzBuzz - Python)
       run: |
         python compiler_gen3.py fizzbuzz.py1 > output_fb.py
         python output_fb.py
@@ -66,11 +66,8 @@ jobs:
         python compiler_gen3.py unicode_test.py1 > output_uni.py
         python output_uni.py
 
-    # 【新設】6. IRコンパイラテスト
-        # ... (前略) ...
-
-    # 6. IRコンパイラテスト (FizzBuzz)
-    - name: 6. IR Compilation Test (FizzBuzz)
+    # 6. IRコンパイラのコンパイルと実行
+    - name: 6. IR Compilation (FizzBuzz IR)
       run: |
         echo "--- Compiling the IR Compiler ---"
         python compiler_gen3.py compiler_ir.py1 > compiler_ir.py
@@ -78,6 +75,16 @@ jobs:
         echo "--- Generating FizzBuzz IR ---"
         python compiler_ir.py fizzbuzz_while.py1 > fizzbuzz.ir
         
-        echo "--- Generated IR Output ---"
+        # デバッグ用: IRの中身を表示
         cat fizzbuzz.ir
 
+    # 7. VMのコンパイルと実行 (Final Stage)
+    - name: 7. VM Execution (FizzBuzz)
+      run: |
+        echo "--- Compiling the VM ---"
+        # py1言語で書かれたVMを、Pythonに変換
+        python compiler_gen3.py vm.py1 > vm.py
+        
+        echo "--- Executing FizzBuzz on VM ---"
+        # VM(Python)上で IRコード を実行
+        python vm.py fizzbuzz.ir
