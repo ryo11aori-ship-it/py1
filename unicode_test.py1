@@ -1,14 +1,21 @@
-@v s 'sys'
-@v 出 'stdout'
-@v バ 'buffer'
-@v 書 'write'
-@v コ 'encode'
-@v 符 'utf-8'
-@v 日 '日本語もOK\n'
+@v 表 'print'
+@v 範 'range'
+@v も 'import'
+@v 数 'math'
+@v 円 'pi'
+@v 根 'sqrt'
+@v 和 'sum'
+@v 日 '日本語もOK'
 $
-m s
+も 数
 
-# sys.stdout.buffer.write("日本語...".encode("utf-8"))
-# Pythonのテキスト変換層を通さず、echoコマンドのようにバイトを直接叩き込む
-# これで文字化けの発生余地をゼロにする
-s.出.バ.書("日".コ("符"))
+# 数学関数のテスト
+表(数.根(数.円))
+
+# 漢字でループと集計
+表(和(範(10)))
+
+# 日本語テスト
+# コンパイラが json.dumps で正規化するため、
+# 生成されるコードは print("日本語もOK") となる
+表("日")
