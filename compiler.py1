@@ -17,7 +17,7 @@
 @v 逆 'untokenize'
 @v g 'group'
 @v 組 'compile'
-@v 合 'match'
+@v 検 'match'
 @v k 'type'
 @v 字 'string'
 @v 始 'start'
@@ -47,6 +47,31 @@
 @v 複 'Use double quotes'
 @v 単 'String len != 1'
 @v 空 ''
+@v 銭 'msg'
+@v 道 'path'
+@v 文 'source_text'
+@v 本 'lines'
+@v 辞 'sym_table'
+@v 積 'body_lines'
+@v 旗 'is_body'
+@v 式 'pattern'
+@v 番 'idx'
+@v 目 'line_str'
+@v 当 'match_obj'
+@v 鍵 'key'
+@v 値 'val'
+@v 塊 'joined_body'
+@v 流 'stream'
+@v 束 'tokens'
+@v 新 'new_tokens'
+@v 票 'tok'
+@v 型 'tok_type'
+@v 身 'tok_str'
+@v 幕 't_start'
+@v 閉 't_end'
+@v 線 'line_txt'
+@v 中 'inner'
+@v 結 'result'
 $
 m s
 m K
@@ -63,83 +88,83 @@ i len(s.v) < 2:
  p("使")
  s.去(1)
 
-P = s.v[1]
-T = J(P, "モ", E="符").u()
-L = T.h()
+道 = s.v[1]
+文 = J(道, "モ", E="符").u()
+本 = 文.h()
 
-Q = {}
-W = []
-F = 0
-A = X.組("則")
+辞 = {}
+積 = []
+旗 = 0
+式 = X.組("則")
 
-f N n g(len(L)):
- I = L[N].z()
- i F == 0:
-  i I == "ド":
-   F = 1
+f 番 n g(len(本)):
+ 目 = 本[番].z()
+ i 旗 == 0:
+  i 目 == "ド":
+   旗 = 1
+   P # continue
+  
+  i not 目:
+   P
+  i 目.始("シ"):
    P
   
-  i not I:
-   P
-  i I.始("シ"):
-   P
-  
-  Z = A.合(I)
-  i Z:
-   K_ = Z.g(1)
-   V = Z.g(2)
-   i K_ n 禁:
-    O("予".形(K_), N+1)
-   i K_ n Q:
-    O("済".形(K_), N+1)
-   Q[K_] = V
+  当 = 式.検(目)
+  i 当:
+   鍵 = 当.g(1)
+   値 = 当.g(2)
+   i 鍵 n 禁:
+    O("予".形(鍵), 番+1)
+   i 鍵 n 辞:
+    O("済".形(鍵), 番+1)
+   辞[鍵] = 値
   e:
-   O("メ", N+1)
+   O("メ", 番+1)
  e:
-  W.append(L[N])
+  積.append(本[番])
 
-i F == 0:
+i 旗 == 0:
  O("無", 0)
 
-B_ = "改".j(W)
-S_ = M.B(B_.E("符")).readline
-Ts = K.K(S_)
-Ns = []
+塊 = "改".j(積)
+流 = M.B(塊.E("符")).readline
+束 = K.K(流)
+新 = []
 
-f t n Ts:
- Y_ = t.k
- S_ = t.字
- st = t.始
- en = t.終
- ln = t.y
+f 票 n 束:
+ 型 = 票.k
+ 身 = 票.字
+ 幕 = 票.始
+ 閉 = 票.終
+ 線 = 票.y
 
- i Y_ == K.j:
-  i len(S_) > 1:
-   O("長".形(S_), st[0])
+ i 型 == K.j:
+  i len(身) > 1:
+   O("長".形(身), 幕[0])
   
-  i S_ n 図:
-   Ns.append((Y_, 図[S_]))
+  i 身 n 図:
+   新.append((型, 図[身]))
   e:
-   i S_ n Q:
-    Ns.append((Y_, Q[S_]))
+   i 身 n 辞:
+    新.append((型, 辞[身]))
    e:
-    O("未".形(S_), st[0])
+    O("未".形(身), 幕[0])
  
  e:
-  i Y_ == K.列:
-   i not (S_.始("引") a S_.終("引")):
-    O("複", st[0])
+  i 型 == K.列:
+   i not (身.始("引") a 身.終("引")):
+    O("複", 幕[0])
    
-   in_ = S_[1:-1]
-   i len(in_) != 1:
-    O("単", st[0])
+   中 = 身[1:-1]
+   i len(中) != 1:
+    O("単", 幕[0])
    
-   i in_ n Q:
-    Ns.append((Y_, "引" + Q[in_] + "引"))
+   i 中 n 辞:
+    新.append((型, "引" + 辞[中] + "引"))
    e:
-    Ns.append((Y_, S_))
+    新.append((型, 身))
   e:
-   Ns.append((t.k, t.字))
+   新.append((票.k, 票.字))
 
-res = K.逆(Ns).解("符")
-p(res)
+結 = K.逆(新).解("符")
+p(結)
