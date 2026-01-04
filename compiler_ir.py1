@@ -56,7 +56,7 @@
 @v 識 'id'
 @v 類 'args'
 @v 体 'body'
-@v 属 'attr'
+@v 性 'attr'
 @v ス 'slice'
 
 # IR Instructions
@@ -218,7 +218,7 @@ d 巡(節):
   i 確(節.関, 星.属):
    巡(節.関.価) # Push object
    # メソッド名を引数に CALL
-   表(喚.形(節.関.属))
+   表(喚.形(節.関.性))
 
   # Function call: func(args)
   i 確(節.関, 星.名):
