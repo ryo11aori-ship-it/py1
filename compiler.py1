@@ -33,7 +33,7 @@
 @v モ 'r'
 @v 符 'utf-8'
 @v 使 'Usage: python py1.py <source_file>'
-@v 則 '^@v\s+(.)\s+\x27([^\x27]*)\x27\s*$'
+@v 則 '^@v\\s+(.)\\s+\\x27([^\x27]*)\\x27\\s*$'
 @v エ 'Error: [Line {}] {}\n'
 @v 予 'Reserved: {}'
 @v 済 'Redefined: {}'
@@ -87,6 +87,7 @@
 @v 報 'TokenInfo'
 @v 逃 'unicode_escape'
 @v ダ 'dumps'
+@v 保 'ensure_ascii'
 $
 m s
 m 分
@@ -182,7 +183,7 @@ f 票 n 束:
     警("単", 幕[0])
    
    i 中 n 辞:
-    新.加(分.報(型, J.ダ(辞[中], ensure_ascii=F), 幕, 閉, 線))
+    新.加(分.報(型, J.ダ(辞[中], 保=F), 幕, 閉, 線))
    e:
     新.加(分.報(型, 身, 幕, 閉, 線))
   e:
