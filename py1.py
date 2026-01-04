@@ -3,128 +3,115 @@ import tokenize
 import io
 import re
 import json
-from tokenize import TokenInfo
 from spec_consts import RESERVED_MAP, RESERVED_CHARS
 
-
-def error_die(msg_txt, line_num=0):
-    if line_num:
-        msg = "Error: [Line {}] {}\n".format(line_num, msg_txt)
-    else:
-        msg = "Error: {}\n".format(msg_txt)
-    sys.stderr.write(msg)
+def error(msg, line_num=None):
+    prefix = f"[Line {line_num}] " if line_num else ""
+    sys.stderr.write(f"Error: {prefix}{msg}\n")
     sys.exit(1)
-
 
 def parse_definitions(source_text):
     lines = source_text.splitlines()
-    symbols = {}
+    symbol_table = {}
     body_lines = []
-    in_body = False
+    is_body = False
+    
+    # Unicode1文字を許可
+    def_pattern = re.compile(r"^@v\s+(.)\s+'([^']*)'\s*$")
 
-    # @v <char> '<string>'
-    def_re = re.compile(r"^@v\s+(.)\s+'([^']*)'\s*$")
+    for i, line in enumerate(lines):
+        line_num = i + 1
+        stripped = line.strip()
 
-    for idx, line in enumerate(lines):
-        line_str = line.strip()
-        line_no = idx + 1
-
-        if not in_body:
-            if line_str == "$":
-                in_body = True
+        if not is_body:
+            if stripped == '$':
+                is_body = True
                 continue
+            if not stripped: continue
+            if stripped.startswith('#'): continue
 
-            if not line_str or line_str.startswith("#"):
-                continue
+            match = def_pattern.match(stripped)
+            if match:
+                char_key = match.group(1)
+                raw_value = match.group(2)
+                
+                # エスケープシーケンスを解釈
+                try:
+                    value = raw_value.encode('utf-8').decode('unicode_escape')
+                except Exception:
+                    value = raw_value
 
-            m = def_re.match(line_str)
-            if not m:
-                error_die("Invalid def", line_no)
-
-            key = m.group(1)
-            val = m.group(2)
-
-            try:
-                val = val.encode("utf-8").decode("unicode_escape")
-            except Exception:
-                pass
-
-            if key in RESERVED_CHARS:
-                error_die("Reserved: {}".format(key), line_no)
-            if key in symbols:
-                error_die("Redefined: {}".format(key), line_no)
-
-            symbols[key] = val
+                if char_key in RESERVED_CHARS:
+                    error(f"Character '{char_key}' is reserved by system.", line_num)
+                if char_key in symbol_table:
+                    error(f"Redefinition of '{char_key}'.", line_num)
+                symbol_table[char_key] = value
+            else:
+                error("Invalid syntax in definition phase.", line_num)
         else:
             body_lines.append(line)
 
-    if not in_body:
-        error_die("No $ separator", 0)
+    if not is_body:
+        error("Separator '$' not found.")
 
-    joined_body = "\n".join(body_lines)
-    return symbols, joined_body
+    return symbol_table, "\n".join(body_lines)
 
+def transpile(source_path):
+    with open(source_path, 'r', encoding='utf-8') as f:
+        source_text = f.read()
 
-def transpile(path):
-    source_text = open(path, "r", encoding="utf-8").read()
-    symbols, body = parse_definitions(source_text)
-
-    stream = io.BytesIO(body.encode("utf-8")).readline
-    tokens = list(tokenize.tokenize(stream))
-
+    symbol_table, body_text = parse_definitions(source_text)
+    
+    tokens = list(tokenize.tokenize(io.BytesIO(body_text.encode('utf-8')).readline))
     new_tokens = []
-
+    
     for tok in tokens:
-        t_type = tok.type
-        t_str = tok.string
-        t_start = tok.start
+        token_type = tok.type
+        token_string = tok.string
+        start = tok.start
+        end = tok.end
+        line_text = tok.line
 
-        if t_type == tokenize.NAME:
-            if len(t_str) != 1:
-                error_die("Long name: {}".format(t_str), t_start[0])
+        if token_type == tokenize.NAME:
+            if len(token_string) > 1:
+                error(f"Invalid identifier '{token_string}'. Only 1-char identifiers allowed.", start[0])
 
-            if t_str in RESERVED_MAP:
-                new_tokens.append(
-                    TokenInfo(t_type, RESERVED_MAP[t_str], tok.start, tok.end, tok.line)
-                )
-            elif t_str in symbols:
-                new_tokens.append(
-                    TokenInfo(t_type, symbols[t_str], tok.start, tok.end, tok.line)
-                )
+            if token_string in RESERVED_MAP:
+                new_tokens.append(tokenize.TokenInfo(token_type, RESERVED_MAP[token_string], start, end, line_text))
+            elif token_string in symbol_table:
+                new_tokens.append(tokenize.TokenInfo(token_type, symbol_table[token_string], start, end, line_text))
             else:
-                error_die("Undefined: {}".format(t_str), t_start[0])
+                error(f"Undefined identifier '{token_string}'.", start[0])
 
-        elif t_type == tokenize.STRING:
-            if not (t_str.startswith("\"") and t_str.endswith("\"")):
-                error_die("Use double quotes", t_start[0])
-
-            inner = t_str[1:-1]
+        elif token_type == tokenize.STRING:
+            if not (token_string.startswith('"') and token_string.endswith('"')):
+                error("Only double quotes allowed in body.", start[0])
+            
+            inner = token_string[1:-1]
             if len(inner) != 1:
-                error_die("String len != 1", t_start[0])
-
-            if inner in symbols:
-                # ★ json.dumps は常にダブルクォートを使う → 正規化保証
-                lit = json.dumps(symbols[inner], ensure_ascii=False)
-                new_tokens.append(
-                    TokenInfo(tokenize.STRING, lit, tok.start, tok.end, tok.line)
-                )
+                error(f"String literal must be exactly 1 char. Found: '{inner}'", start[0])
+            
+            if inner in symbol_table:
+                # 【重要】json.dumpsを使って正規化（常にダブルクォート使用）
+                # ensure_ascii=False でUTF-8文字をそのまま出力（読みやすさ優先）
+                safe_val = json.dumps(symbol_table[inner], ensure_ascii=False)
+                new_tokens.append(tokenize.TokenInfo(token_type, safe_val, start, end, line_text))
             else:
-                new_tokens.append(tok)
+                new_tokens.append(tokenize.TokenInfo(tokenize.STRING, token_string, start, end, line_text))
 
         else:
             new_tokens.append(tok)
 
-    result = tokenize.untokenize(new_tokens)
-
-    if isinstance(result, bytes):
-        result = result.decode("utf-8")
-
-    return result
-
+    result_code = tokenize.untokenize(new_tokens)
+    return result_code.decode('utf-8')
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python py1.py <source_file>")
         sys.exit(1)
-
-    print(transpile(sys.argv[1]))
+    try:
+        compiled_python = transpile(sys.argv[1])
+        print(compiled_python)
+    except Exception as e:
+        sys.stderr.write(str(e) + "\n")
+        sys.exit(1)
