@@ -137,26 +137,9 @@ int main(int argc, char *argv[]) {
             if (is_number(arg)) {
                 push(atoi(arg));
             } else {
-                // 文字列リテラル等の扱いは今回は簡易的にそのまま (FizzBuzz等の文字出力用は仕様要検討だが、
-                // py1のIRでは数値以外は変数名か文字列として扱われる。
-                // FizzBuzzでは PRINT FizzBuzz のように来るため、スタックには便宜上マジックナンバーを入れるか、
-                // 文字列対応が必要。
-                // ★今回のC実装では「文字列ポインタ」をスタックに積むのは危険なので、
-                // FizzBuzzの文字列出力は特別扱い、または簡易実装とする。
-                // compiler_ir.py1の出力を見ると PUSH FizzBuzz としている。
-                // C言語版VMでこれを正しく扱うにはスタックを共用体にする必要があるが、
-                // 今回は「FizzBuzz」などの文字列引数は例外的に「そのまま文字列として保持」するロジックは複雑。
-                // よって、今回は「数値のみスタック」とし、文字列PUSHは「ダミー数値」にして、
-                // PRINT側で引数argを見るハックを入れることで回避する（PoCのため）。
-                
-                // ただし、py1のIRは `PUSH Fizz` -> `PRINT` の順序。
-                // スタックに積まれるのは `Fizz` という文字列。
-                // Cのintスタックには入らない。
-                // -> 修正方針: スタックを少しリッチにする必要があるが、
-                // ここでは「argが数値でなければ、とりあえず0を積む」とし、
-                // PRINT命令時に「直前のPUSHが文字列だった場合」の対応...は難しい。
-                
-                // 【解決策】スタックを「値(int)」と「型(type)」を持つ構造体にする。
+                // 【修正】文字列の場合もダミー値を積んでおく必要がある
+                // そうしないと次のPRINTでpopしたときにunderflowする
+                push(0);
             }
         }
         else if (strcmp(cmd, "STORE") == 0) { set_var(arg, pop()); }
@@ -171,22 +154,23 @@ int main(int argc, char *argv[]) {
         else if (strcmp(cmd, "JUMP") == 0) { ip = find_label(arg); }
         else if (strcmp(cmd, "JZERO") == 0) { if (pop() == 0) ip = find_label(arg); }
         else if (strcmp(cmd, "PRINT") == 0) {
-            // IRの仕様上、PRINTはスタックトップを印刷する。
-            // しかし PUSH FizzBuzz が数値を積めないので、
-            // 暫定対応: 直前の命令を再パースして、もしPUSH 文字列ならそれを表示。
-            // 綺麗な実装ではないが、C言語で最短で動かすためのハック。
+            // 直前の命令を確認するハック
             char prev_buf[LINE_BUF_SIZE];
-            strcpy(prev_buf, program[ip-2]); // PRINT(ip-1) -> その前(ip-2)
-            char *p_cmd = strtok(prev_buf, " ");
-            char *p_arg = strtok(NULL, " ");
-            
-            if (p_cmd && strcmp(p_cmd, "PUSH") == 0 && !is_number(p_arg)) {
-                // 文字列リテラルのPUSHだった場合、スタックの値(ダミー)を捨てて文字列を表示
-                pop(); 
-                printf("%s\n", p_arg);
+            // 安全策: ip-2 が範囲内か確認
+            if (ip >= 2) {
+                strcpy(prev_buf, program[ip-2]); 
+                char *p_cmd = strtok(prev_buf, " ");
+                char *p_arg = strtok(NULL, " ");
+                
+                if (p_cmd && strcmp(p_cmd, "PUSH") == 0 && !is_number(p_arg)) {
+                    // 文字列リテラルのPUSHだった場合
+                    pop(); // ダミー(0)を捨てる
+                    printf("%s\n", p_arg);
+                } else {
+                    printf("%d\n", pop());
+                }
             } else {
-                // 通常の数値表示
-                printf("%d\n", pop());
+                 printf("%d\n", pop());
             }
         }
     }
