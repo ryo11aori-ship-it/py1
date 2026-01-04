@@ -1,5 +1,6 @@
 @v s 'sys'
 @v 開 'open'
+@v 読 'read'
 @v 印 'print'
 @v 数 'int'
 @v 列 'list'
