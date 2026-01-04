@@ -1,18 +1,18 @@
 @v p 'print'
 @v g 'range'
-@v F 'Fizz'
-@v B 'Buzz'
-@v Z 'FizzBuzz'
+@v H 'Fizz'
+@v u 'Buzz'
+@v X 'FizzBuzz'
 @v k 'i'
 $
 f k n g(1, 101):
  i k % 15 == 0:
-  p("Z")
+  p("X")
  e:
   i k % 3 == 0:
-   p("F")
+   p("H")
   e:
    i k % 5 == 0:
-    p("B")
+    p("u")
    e:
     p(k)
