@@ -119,7 +119,9 @@ def transpile(source_path):
                 new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
                 continue
             if inner in symbol_table:
-                safe_val = json.dumps(symbol_table[inner], ensure_ascii=False)
+                # 【ここを変更】ensure_ascii=False を削除！
+                # これでASCIIエスケープ出力 (\uXXXX) になり、文字化けしなくなる
+                safe_val = json.dumps(symbol_table[inner])
                 new_tokens.append(TokenInfo(tokenize.STRING, safe_val, t_start, t_end, t_line))
             else:
                 new_tokens.append(TokenInfo(tokenize.STRING, t_str, t_start, t_end, t_line))
