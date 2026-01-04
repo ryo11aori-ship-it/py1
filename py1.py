@@ -16,24 +16,6 @@ def error(msg, line_num=None):
     sys.stderr.write(f"Error: {prefix}{msg}\n")
     had_error = True
 
-def _maybe_fix_latin1_bytes_as_str(s: str) -> str:
-    if not s:
-        return s
-    high = sum(1 for ch in s if ord(ch) > 127)
-    if high == 0:
-        return s
-    if high / len(s) < 0.3:
-        return s
-    try:
-        b = bytes((ord(ch) & 0xFF) for ch in s)
-        candidate = b.decode("utf-8")
-    except Exception:
-        return s
-    for ch in candidate:
-        if "\u3040" <= ch <= "\u30ff" or "\u4e00" <= ch <= "\u9fff":
-            return candidate
-    return s
-
 def parse_definitions(source_text):
     lines = source_text.splitlines()
     symbol_table = {}
@@ -57,11 +39,15 @@ def parse_definitions(source_text):
                 continue
             key = m.group(1)
             raw_value = m.group(2)
-            try:
-                value = codecs.decode(raw_value, "unicode_escape")
-            except Exception:
-                value = raw_value
-            value = _maybe_fix_latin1_bytes_as_str(value)
+            
+            # 【修正】バックスラッシュがある場合のみデコードする
+            value = raw_value
+            if "\\" in raw_value:
+                try:
+                    value = codecs.decode(raw_value, "unicode_escape")
+                except Exception:
+                    pass
+            
             if key in RESERVED_CHARS:
                 error(f"Character '{key}' is reserved by system.", line_num)
             if key in symbol_table:
@@ -119,8 +105,7 @@ def transpile(source_path):
                 new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
                 continue
             if inner in symbol_table:
-                # 【ここを変更】ensure_ascii=False を削除！
-                # これでASCIIエスケープ出力 (\uXXXX) になり、文字化けしなくなる
+                # 【修正】ensure_ascii=False を削除（デフォルトTrue）
                 safe_val = json.dumps(symbol_table[inner])
                 new_tokens.append(TokenInfo(tokenize.STRING, safe_val, t_start, t_end, t_line))
             else:
