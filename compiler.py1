@@ -1,148 +1,204 @@
 @v s 'sys'
-@v 星 'ast'
-@v 表 'print'
+@v 分 'tokenize'
+@v 入 'io'
+@v X 're'
+@v J 'json'
+@v 規 'spec_consts'
+@v 図 'RESERVED_MAP'
+@v 禁 'RESERVED_CHARS'
+@v p 'print'
 @v 開 'open'
-@v 読 'read'
-@v 型 'isinstance'
-@v 逝 'exit'
-@v 書 'write'
-@v 誤 'stderr'
-@v 形 'format'
-@v 寸 'len'
-@v 裂 'splitlines'
-@v 削 'strip'
-@v 引 'argv'
-@v 解 'parse'
-@v 規 're'
+@v u 'read'
+@v v 'argv'
+@v h 'splitlines'
+@v z 'strip'
+@v B 'BytesIO'
+@v E 'encode'
+@v 解 'decode'
+@v 逆 'untokenize'
+@v g 'group'
 @v 組 'compile'
 @v 検 'match'
-@v グ 'group'
-
-# AST Types (クラス名)
-@v 根 'Module'
-@v 式 'Expr'
-@v 呼 'Call'
-@v 定 'Constant'
-@v 二 'BinOp'
-@v 足 'Add'
-@v 減 'Sub'
-@v 掛 'Mult'
-@v 除 'Div'
-@v 名 'Name'
-
-# AST Attributes (属性名)
-@v 値 'value'
-@v 左 'left'
-@v 右 'right'
-@v 算 'op'
-@v 関 'func'
-@v 識別 'id'
-@v 類 'args'
-@v 体 'body'
-
-# Misc
-@v 範 'range'
-@v 改 '\n'
+@v k 'type'
+@v 字 'string'
+@v 始 'start'
+@v 終 'end'
+@v y 'line'
+@v j 'NAME'
+@v 列 'STRING'
+@v 去 'exit'
+@v 誤 'stderr'
+@v 書 'write'
+@v 形 'format'
+@v モ 'r'
 @v 符 'utf-8'
-@v 読モード 'r'
-@v メ 'Usage: python compiler_ir.py <source_file>\n'
+@v 使 'Usage: python py1.py <source_file>'
+@v 則 '^@v[ \t]+(.)[ \t]+\x27([^\x27]*)\x27[ \t]*$'
+@v エ 'Error: [Line {}] {}\n'
+@v 予 'Reserved: {}'
+@v 済 'Redefined: {}'
+@v メ 'Invalid def'
 @v ド '$'
 @v シ '#'
+@v 無 'No $ separator'
+@v 改 '\n'
+@v 長 'Long name: {}'
+@v 未 'Undefined: {}'
+@v 引 '"'
+@v 複 'Use double quotes'
+@v 単 'String len != 1'
+@v 空 ''
+@v 銭 'msg'
+@v 道 'path'
+@v 文 'source_text'
+@v 本 'lines'
+@v 辞 'sym_table'
+@v 積 'body_lines'
+@v 旗 'is_body'
+@v 式 'pattern'
+@v 番 'idx'
+@v 目 'line_str'
+@v 当 'match_obj'
+@v 鍵 'key'
+@v 値 'val'
+@v 塊 'joined_body'
+@v 流 'stream'
+@v 束 'tokens'
+@v 新 'new_tokens'
+@v 票 'tok'
+@v 型 'tok_type'
+@v 身 'tok_str'
+@v 幕 't_start'
+@v 閉 't_end'
+@v 線 'line_txt'
+@v 中 'inner'
+@v 結 'result'
+@v 寸 'len'
+@v 加 'append'
+@v 範 'range'
+@v 読 'readline'
+@v 警 'error_die'
+@v 言 'msg_txt'
+@v 行 'line_num'
 @v 号 'encoding'
-# 正規表現（バックスラッシュ回避のため空白は[ \t]で表現）
-@v 則 '^@v[ \t]+(.)[ \t]+\x27([^\x27]*)\x27[ \t]*$'
-
+@v 連 'join'
+@v 頭 'startswith'
+@v 尾 'endswith'
+@v 報 'TokenInfo'
+@v 逃 'unicode_escape'
+@v ダ 'dumps'
+@v 害 'err_flag'
+@v 反 '\\'
 $
 m s
-m 星
-m 規
+m 分
+m 入
+m X
+m J
+o 規 m 図, 禁
 
-# 定義辞書
+害 = 0
+
+d 警(言, 行):
+ G 害
+ 銭 = "エ".形(行, 言)
+ s.誤.書(銭)
+ 害 = 1
+
+i 寸(s.v) < 2:
+ p("使")
+ s.去(1)
+
+道 = s.v[1]
+文 = 開(道, "モ", 号="符").u()
+本 = 文.h()
+
 辞 = {}
-
-# Visitor関数
-d 巡(節):
- # --- 式 (Expr) ---
- i 型(節, 星.式):
-  巡(節.値)
-
- # --- 定数 (Constant) ---
- i 型(節, 星.定):
-  表("PUSH {}".形(節.値))
-
- # --- 二項演算 (BinOp) ---
- i 型(節, 星.二):
-  # 逆ポーランド記法順 (左右を先に処理)
-  巡(節.左)
-  巡(節.右)
-  
-  i 型(節.算, 星.足):
-   表("ADD")
-  i 型(節.算, 星.減):
-   表("SUB")
-  i 型(節.算, 星.掛):
-   表("MUL")
-  i 型(節.算, 星.除):
-   表("DIV")
-
- # --- 関数呼び出し (Call) ---
- i 型(節, 星.呼):
-  # 引数を処理
-  f 項 n 節.類:
-   巡(項)
-  
-  # 関数名を解決 ("print" かどうか)
-  # py1ソースでは1文字エイリアスになっているので辞書で引く
-  真名 = ""
-  i 型(節.関, 星.名):
-   仮名 = 節.関.識別
-   i 仮名 n 辞:
-    真名 = 辞[仮名]
-   e:
-    真名 = 仮名
-  
-  i 真名 == "print":
-   表("PRINT")
-
- # --- モジュール (Module) ---
- i 型(節, 星.根):
-  f 文 n 節.体:
-   巡(文)
-
-# ---------------------------------------------------------
-# Main
-# ---------------------------------------------------------
-i 寸(s.引) < 2:
- s.誤.書(メ)
- s.逝(1)
-
-パス = s.引[1]
-全文 = 開(パス, "読モード", 号="符").読()
-行列 = 全文.裂()
-
-身 = ""
+積 = []
 旗 = 0
-パタン = 規.組("則")
+式 = X.組("則")
 
-f 行 n 行列:
- 削行 = 行.削()
- i 旗:
-  身 = 身 + 行 + "改"
- e:
-  i 削行 == "ド":
+f 番 n 範(寸(本)):
+ 目 = 本[番].z()
+ i 旗 == 0:
+  i 目 == "ド":
    旗 = 1
    C
   
-  # @v 定義を簡易パースして辞書に入れる
-  # これにより、ir_test.py1 側の '@v 表 print' を理解できるようにする
-  当 = パタン.検(削行)
+  i N 目:
+   C
+  i 目.頭("シ"):
+   C
+  
+  当 = 式.検(目)
   i 当:
-   鍵 = 当.グ(1)
-   値 = 当.グ(2)
+   鍵 = 当.g(1)
+   値 = 当.g(2)
+   
+   # 【ここを修正】 "反" とクォートすることで、生成コードに "\\" (文字列) として出力させる
+   # これで `if "\\" in val:` となり、文法エラーが消える
+   i "反" n 値:
+     t:
+      値 = 値.E("符").解("逃")
+     x:
+      P
+
+   i 鍵 n 禁:
+    警("予".形(鍵), 番+1)
+   i 鍵 n 辞:
+    警("済".形(鍵), 番+1)
    辞[鍵] = 値
+  e:
+   警("メ", 番+1)
+ e:
+  積.加(本[番])
 
-# AST解析
-木 = 星.解(身)
+i 旗 == 0:
+ 警("無", 0)
 
-# コンパイル実行
-巡(木)
+塊 = "改".連(積)
+流 = 入.B(塊.E("符")).読
+束 = 分.分(流)
+新 = []
+
+f 票 n 束:
+ 型 = 票.k
+ 身 = 票.字
+ 幕 = 票.始
+ 閉 = 票.終
+ 線 = 票.y
+
+ i 型 == 分.j:
+  i 寸(身) > 1:
+   警("長".形(身), 幕[0])
+  
+  i 身 n 図:
+   新.加(分.報(型, 図[身], 幕, 閉, 線))
+  e:
+   i 身 n 辞:
+    新.加(分.報(型, 辞[身], 幕, 閉, 線))
+   e:
+    警("未".形(身), 幕[0])
+    新.加(票)
+ 
+ e:
+  i 型 == 分.列:
+   i N (身.頭("引") a 身.尾("引")):
+    警("複", 幕[0])
+   
+   中 = 身[1:-1]
+   i 寸(中) != 1:
+    警("単", 幕[0])
+   
+   i 中 n 辞:
+    新.加(分.報(型, J.ダ(辞[中]), 幕, 閉, 線))
+   e:
+    新.加(分.報(型, 身, 幕, 閉, 線))
+  e:
+   新.加(票)
+
+i 害:
+ s.去(1)
+
+結 = 分.逆(新).解("符")
+p(結)
