@@ -3,9 +3,9 @@ name: Test py1 Compiler & Self-Hosting
 on: [push, pull_request]
 
 env:
-  # 文字化け対策の鉄板設定
+  # 【決定打】Pythonを強制的にUTF-8モードで動作させる
+  PYTHONUTF8: 1
   PYTHONIOENCODING: utf-8
-  LANG: C.UTF-8
 
 jobs:
   build:
@@ -18,6 +18,11 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
+
+    # 環境チェック: まず普通のPythonで日本語が出るか確認（これで出れば環境はOK）
+    - name: 0. Environment Check
+      run: |
+        python -c "print('Environment Check: 日本語OK')"
 
     # 1. ブートストラップ（世代1 -> 世代2）
     - name: 1. Bootstrap Generation 1 (py1.py -> compiler_gen2.py)
