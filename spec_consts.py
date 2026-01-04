@@ -1,16 +1,16 @@
 # spec_consts.py
-# Pythonの予約語とpy1の1文字トークンの固定マッピング
-# keyword.kwlist (Python 3.10+) を参考に網羅
-
 RESERVED_MAP = {
     # --- 制御構文 ---
     'i': 'if',
-    'e': 'else',  # elif は else if で代用想定だが、定義するならEなどで
+    'e': 'else',
     'f': 'for',
-    'w': 'while',
+    
+    # 【変更】ここがチューリング完全性の証
+    'W': 'while', # 元は 'w' でしたが、大文字 'W' を while に割り当てて強調
+    
     'b': 'break',
-    'C': 'continue', # cはclassで使う
-    'P': 'pass',     # pはprint用
+    'C': 'continue',
+    'P': 'pass',
     'r': 'return',
     'Y': 'yield',
     
@@ -24,7 +24,7 @@ RESERVED_MAP = {
     # --- 例外処理 ---
     't': 'try',
     'x': 'except',
-    'L': 'finally', # Last
+    'L': 'finally',
     'R': 'raise',
     'S': 'assert',
     
@@ -34,7 +34,7 @@ RESERVED_MAP = {
     
     # --- インポート ---
     'm': 'import',
-    'o': 'from', # Origin
+    'o': 'from',
     'A': 'as',
     
     # --- 論理・比較・演算 ---
@@ -47,16 +47,14 @@ RESERVED_MAP = {
     
     # --- 定数 ---
     'T': 'True',
-    'F': 'False',
-    'Z': 'None', # Zero/Null
+    # 'F': 'False', # Fはシステム予約だが、compiler.py1でFalseとして使わないなら定義不要
+    'Z': 'None',
     
-    # --- パターンマッチ (Soft keywords) ---
-    # 文脈依存だが、py1では予約語として扱う方が安全
+    # --- パターンマッチ ---
     'M': 'match',
     'K': 'case',
     
-    # --- その他 ---
-    'W': 'with',
+    # 'w': 'with', # 小文字wをwithに逃がすか、今回は未定義にしておく
 }
 
 RESERVED_CHARS = set(RESERVED_MAP.keys())
