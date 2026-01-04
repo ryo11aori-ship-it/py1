@@ -16,6 +16,7 @@
 @v 始 'startswith'
 @v 分 'split'
 @v 結 'join'
+@v 塗 'str'
 
 # AST Types
 @v 根 'Module'
@@ -27,7 +28,21 @@
 @v 減 'Sub'
 @v 掛 'Mult'
 @v 除 'Div'
+@v 余 'Mod'
 @v 名 'Name'
+@v 代 'Assign'
+@v タ 'targets'
+@v 間 'While'
+@v 条 'test'
+@v も 'If'
+@v 他 'orelse'
+@v 比 'Compare'
+@v 左 'left'
+@v 演 'ops'
+@v 比 'comparators'
+@v 等 'Eq'
+@v 小 'Lt'
+@v 小 'LtE'
 
 # AST Attributes
 @v 価 'value'
@@ -39,17 +54,24 @@
 @v 類 'args'
 @v 体 'body'
 
-# IR Strings
+# IR Instructions
 @v 積 '"PUSH {}"'
 @v 加 '"ADD"'
 @v 差 '"SUB"'
 @v 乗 '"MUL"'
 @v 割 '"DIV"'
+@v 剰 '"MOD"'
 @v 印 '"PRINT"'
 @v 刷 '"print"'
+@v 蔵 '"STORE {}"'
+@v 荷 '"LOAD {}"'
+@v 札 '"LABEL {}"'
+@v 飛 '"JUMP {}"'
+@v ゼ '"JZERO {}"'
+@v 同 '"EQ"'
+@v 負 '"LT"'
 
 # Misc
-# 【重要】バックスラッシュを2つにして、生成コード内での改行破壊を防ぐ
 @v 改 '"\\n"'
 @v 符 '"utf-8"'
 @v 号 '"encoding"'
@@ -59,8 +81,9 @@
 @v 冠 '"@v"'
 @v 鬱 'str'
 @v 字 'chr'
+@v 空 '" "'
 
-# 変数宣言
+# Vars
 @v 辞 'D'
 @v 節 'n'
 @v 項 'x'
@@ -83,24 +106,45 @@
 @v 残 'E'
 @v 点 'Q'
 @v 間 'W'
+@v 番 'C'
+@v ラ 'LB'
+@v 新 'NL'
 
 $
 m s
 m 星
 
-# 定義辞書
+# Global Vars
 辞 = {}
-# 動的生成
+番 = [0]
 点 = 字(39)
 間 = 字(32)
 
-d 巡(節):
- i 確(節, 星.式):
-  巡(節.価)
+# Label Generator
+d 新():
+ 番[0] = 番[0] + 1
+ R "L" + 塗(番[0])
 
+d 巡(節):
+ # --- Values ---
  i 確(節, 星.定):
   表(積.形(節.価))
+ 
+ i 確(節, 星.名):
+  # 変数参照 (LOAD)
+  # STOREの場合はターゲット側で処理されるのでここはLOADのみ
+  表(荷.形(節.識))
 
+ # --- Assignment ---
+ i 確(節, 星.代):
+  # 右辺を計算 (PUSHされる)
+  巡(節.価)
+  # 左辺(変数名)にSTORE
+  f 項 n 節.ターゲット:
+   i 確(項, 星.名):
+    表(蔵.形(項.識))
+
+ # --- Operations ---
  i 確(節, 星.二):
   巡(節.左)
   巡(節.右)
@@ -112,6 +156,72 @@ d 巡(節):
    表(乗)
   i 確(節.算, 星.除):
    表(割)
+  i 確(節.算, 星.余):
+   表(剰)
+
+ i 確(節, 星.比):
+  # 簡単のため1対1の比較のみ対応
+  巡(節.左辺)
+  巡(節.比較子[0])
+  op = 節.演算[0]
+  i 確(op, 星.等):
+   表(同)
+  i 確(op, 星.小):
+   表(負)
+  i 確(op, 星.小イ):
+   # LTEは未実装だがFizzBuzzにはLTがあればいい
+   表(負)
+
+ # --- Control Flow ---
+ i 確(節, 星.も):
+  # If
+  ラ1 = 新()
+  ラ2 = 新()
+  
+  # 条件
+  巡(節.条)
+  # FalseならL1(else/end)へ
+  表(ゼロ飛.形(ラ1))
+  
+  # True Block
+  f 項 n 節.体:
+   巡(項)
+  # 終わったらL2(end)へ
+  表(飛.形(ラ2))
+  
+  # Else Block
+  表(札.形(ラ1))
+  f 項 n 節.他:
+   巡(項)
+  
+  # End
+  表(札.形(ラ2))
+
+ i 確(節, 星.間):
+  # While
+  ラ1 = 新() # Start
+  ラ2 = 新() # End
+  
+  表(札.形(ラ1))
+  
+  # Condition
+  巡(節.条)
+  # FalseならEndへ
+  表(ゼロ飛.形(ラ2))
+  
+  # Body
+  f 項 n 節.体:
+   巡(項)
+  
+  # Loop back
+  表(飛.形(ラ1))
+  
+  # End
+  表(札.形(ラ2))
+
+ # --- Function Call ---
+ i 確(節, 星.式):
+  巡(節.価)
 
  i 確(節, 星.呼):
   f 項 n 節.類:
@@ -128,6 +238,7 @@ d 巡(節):
   i 真 == 刷:
    表(印)
 
+ # --- Module ---
  i 確(節, 星.根):
   f 文 n 節.体:
    巡(文)
@@ -155,7 +266,6 @@ f 行 n 列:
    C
   
   i 素.始(冠):
-   # 空白分割 (引数なし)
    部 = 素.分()
    i 寸(部) >= 3:
     鍵 = 部[1]
