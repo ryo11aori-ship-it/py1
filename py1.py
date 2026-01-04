@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# py1.py -- py1 transpiler (safe bootstrap version)
+# py1.py -- robust transpiler for py1 (handles unicode-escape and latin1-as-str mojibake)
+# Usage: python py1.py <source.py1>  (this prints UTF-8 Python source to stdout.buffer)
 
 import sys
 import tokenize
@@ -13,46 +14,43 @@ from spec_consts import RESERVED_MAP, RESERVED_CHARS
 
 had_error = False
 
-
 def error(msg, line_num=None):
     global had_error
     prefix = f"[Line {line_num}] " if line_num else ""
     sys.stderr.write(f"Error: {prefix}{msg}\n")
     had_error = True
 
-
 def _maybe_fix_latin1_bytes_as_str(s: str) -> str:
     """
-    Try to recover strings that are actually UTF-8 bytes
-    incorrectly represented as Latin-1 characters.
+    If s looks like "latin-1 interpreted bytes" (many U+0080..U+00FF),
+    try to reconstruct original UTF-8 by treating each codepoint as a byte
+    and decoding as UTF-8. Heuristic accepts the candidate if it contains CJK.
     """
     if not s:
         return s
-
+    # quick stats
     high = sum(1 for ch in s if ord(ch) > 127)
     if high == 0:
         return s
-
+    # if only a few high bytes, skip
     if high / len(s) < 0.3:
         return s
-
     try:
-        b = bytes(ord(ch) & 0xFF for ch in s)
-        candidate = b.decode("utf-8")
+        b = bytes((ord(ch) & 0xFF) for ch in s)
+        candidate = b.decode('utf-8')
     except Exception:
         return s
-
-    # Heuristic: if CJK appears, accept
-    for ch in candidate:
-        if "\u3040" <= ch <= "\u30ff" or "\u4e00" <= ch <= "\u9fff":
-            return candidate
-
+    # accept if candidate contains Hiragana/Katakana/CJK
+    if any('\u3040' <= ch <= '\u30ff' or '\u4e00' <= ch <= '\u9fff' for ch in candidate):
+        return candidate
     return s
-
 
 def parse_definitions(source_text):
     """
     Parse @v definitions.
+    - Accepts @v <char> '<value>' lines.
+    - value may contain \xNN or \uXXXX escapes -> decode via unicode_escape.
+    - If decode produces latin-1-like garbage, attempt latin1->utf8 recovery.
     """
     lines = source_text.splitlines()
     symbol_table = {}
@@ -66,10 +64,12 @@ def parse_definitions(source_text):
         stripped = line.strip()
 
         if not is_body:
-            if stripped == "$":
+            if stripped == '$':
                 is_body = True
                 continue
-            if not stripped or stripped.startswith("#"):
+            if not stripped:
+                continue
+            if stripped.startswith('#'):
                 continue
 
             m = def_pattern.match(stripped)
@@ -80,15 +80,18 @@ def parse_definitions(source_text):
             key = m.group(1)
             raw_value = m.group(2)
 
+            # 1) Expand escape sequences like \xNN and \uXXXX reliably
             try:
-                value = codecs.decode(raw_value, "unicode_escape")
+                value = codecs.decode(raw_value, 'unicode_escape')
             except Exception:
+                # fallback: use literal raw_value
                 value = raw_value
 
+            # 2) If value looks like latin-1-as-str (mojibake), try recovery
             value = _maybe_fix_latin1_bytes_as_str(value)
 
             if key in RESERVED_CHARS:
-                error(f"Character '{key}' is reserved.", line_num)
+                error(f"Character '{key}' is reserved by system.", line_num)
             if key in symbol_table:
                 error(f"Redefinition of '{key}'.", line_num)
 
@@ -101,89 +104,101 @@ def parse_definitions(source_text):
 
     return symbol_table, "\n".join(body_lines)
 
-
 def transpile(source_path):
     global had_error
     had_error = False
 
-    with open(source_path, "r", encoding="utf-8") as f:
+    # read source file as UTF-8
+    with open(source_path, 'r', encoding='utf-8') as f:
         source_text = f.read()
 
     symbol_table, body_text = parse_definitions(source_text)
 
     if had_error:
+        # errors in definitions -> bail out
         sys.exit(1)
 
-    stream = io.BytesIO(body_text.encode("utf-8")).readline
-    tokens = list(tokenize.tokenize(stream))
+    # tokenize body (provide bytes stream)
+    stream = io.BytesIO(body_text.encode('utf-8')).readline
+    try:
+        tokens = list(tokenize.tokenize(stream))
+    except tokenize.TokenError as e:
+        error(f"Tokenization failed: {e}", 0)
+        sys.exit(1)
 
     new_tokens = []
 
     for tok in tokens:
-        if tok.type == tokenize.NAME:
-            if len(tok.string) != 1:
-                error(
-                    f"Invalid identifier '{tok.string}'. Only 1-char allowed.",
-                    tok.start[0],
-                )
-                new_tokens.append(tok)
+        t_type = tok.type
+        t_str = tok.string
+        t_start = tok.start
+        t_end = tok.end
+        t_line = tok.line
+
+        # NAME tokens (identifiers) — must be exactly 1 char
+        if t_type == tokenize.NAME:
+            if len(t_str) != 1:
+                error(f"Invalid identifier '{t_str}'. Only 1-char identifiers allowed.", t_start[0])
+                new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
                 continue
 
-            if tok.string in RESERVED_MAP:
-                new_tokens.append(
-                    TokenInfo(
-                        tok.type,
-                        RESERVED_MAP[tok.string],
-                        tok.start,
-                        tok.end,
-                        tok.line,
-                    )
-                )
-            elif tok.string in symbol_table:
-                new_tokens.append(
-                    TokenInfo(
-                        tok.type,
-                        symbol_table[tok.string],
-                        tok.start,
-                        tok.end,
-                        tok.line,
-                    )
-                )
+            if t_str in RESERVED_MAP:
+                repl = RESERVED_MAP[t_str]
+                new_tokens.append(TokenInfo(t_type, repl, t_start, t_end, t_line))
+            elif t_str in symbol_table:
+                repl = symbol_table[t_str]
+                new_tokens.append(TokenInfo(t_type, repl, t_start, t_end, t_line))
             else:
-                error(f"Undefined identifier '{tok.string}'.", tok.start[0])
-                new_tokens.append(tok)
+                error(f"Undefined identifier '{t_str}'.", t_start[0])
+                # keep original to allow debugging
+                new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
 
-        elif tok.type == tokenize.STRING:
-            if tok.string.startswith('"') and tok.string.endswith('"'):
-                inner = tok.string[1:-1]
-                if inner in symbol_table:
-                    safe = json.dumps(symbol_table[inner], ensure_ascii=False)
-                    new_tokens.append(
-                        TokenInfo(
-                            tokenize.STRING,
-                            safe,
-                            tok.start,
-                            tok.end,
-                            tok.line,
-                        )
-                    )
-                else:
-                    new_tokens.append(tok)
+        # STRING tokens (body): only "x" allowed, where x is 1-char representing a symbol
+        elif t_type == tokenize.STRING:
+            if not (t_str.startswith('"') and t_str.endswith('"')):
+                error("Only double quotes allowed in body.", t_start[0])
+                new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
+                continue
+
+            inner = t_str[1:-1]
+            if len(inner) != 1:
+                error(f"String literal must be exactly 1 char. Found: '{inner}'", t_start[0])
+                new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
+                continue
+
+            if inner in symbol_table:
+                # produce stable Python string literal containing the real Unicode
+                safe_val = json.dumps(symbol_table[inner], ensure_ascii=False)
+                new_tokens.append(TokenInfo(tokenize.STRING, safe_val, t_start, t_end, t_line))
             else:
-                new_tokens.append(tok)
+                # keep literal as-is
+                new_tokens.append(TokenInfo(tokenize.STRING, t_str, t_start, t_end, t_line))
+
         else:
-            new_tokens.append(tok)
+            # other tokens: keep
+            new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
 
     if had_error:
         sys.exit(1)
 
     result = tokenize.untokenize(new_tokens)
-    return result.decode("utf-8") if isinstance(result, bytes) else result
+    # untokenize may return bytes or str
+    if isinstance(result, bytes):
+        compiled = result.decode('utf-8')
+    else:
+        compiled = result
 
+    return compiled
 
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python py1.py <source_file>")
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python py1.py <source_file>", file=sys.stderr)
         sys.exit(1)
 
-    print(transpile(sys.argv[1]))
+    src = sys.argv[1]
+    compiled = transpile(src)
+    # write as UTF-8 bytes to stdout to avoid print/encoding variations
+    sys.stdout.buffer.write(compiled.encode('utf-8'))
+
+if __name__ == '__main__':
+    main()
