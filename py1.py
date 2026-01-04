@@ -15,7 +15,7 @@ def parse_definitions(source_text):
     body_lines = []
     is_body = False
     
-    # 【変更点】 [a-zA-Z_] を (.) に変更し、あらゆるUnicode1文字を許可
+    # Unicode1文字を許可 ([a-zA-Z_] -> .)
     def_pattern = re.compile(r"^@v\s+(.)\s+'([^']*)'\s*$")
 
     for i, line in enumerate(lines):
@@ -77,18 +77,21 @@ def transpile(source_path):
                 error(f"Undefined identifier '{token_string}'.", start[0])
 
         elif token_type == tokenize.STRING:
+            # 【厳格化】本文中の文字列は "" のみ、かつ中身は1文字のみ
             if not (token_string.startswith('"') and token_string.endswith('"')):
-                error("Only double quotes allowed for strings in body.", start[0])
+                error("Only double quotes allowed in body.", start[0])
+            
             inner = token_string[1:-1]
             if len(inner) != 1:
-                # 文字列中身が1文字でない場合のエラー処理
-                # ここでは簡易的にそのまま通すかエラーにするかだが、仕様通りエラーにするなら:
-                error(f"String literal must be 1 char. Found: '{inner}'", start[0])
+                error(f"String literal must be exactly 1 char. Found: '{inner}'", start[0])
             
             if inner in symbol_table:
+                # 定義済みの文字列へ展開
                 new_tokens.append((token_type, f'"{symbol_table[inner]}"', start, end, line_text))
             else:
+                # 未定義の場合はそのまま通すが、警告的
                 new_tokens.append((tokenize.STRING, token_string, start, end, line_text))
+
         else:
             new_tokens.append(tok)
 
