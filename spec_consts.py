@@ -1,9 +1,9 @@
 # spec_consts.py
 # Pythonの予約語とpy1の1文字トークンの固定マッピング
-# ここに定義された文字はユーザー定義(@v)で使用できません。
+# ユーザー定義(@v)では、この表にある文字を使用できません。
 
 RESERVED_MAP = {
-    # 主要キーワードの割り当て（衝突しないように設計者が決める）
+    # --- 小文字 (頻出キーワード) ---
     'd': 'def',
     'r': 'return',
     'i': 'if',
@@ -14,29 +14,34 @@ RESERVED_MAP = {
     'm': 'import',
     'o': 'from',
     'c': 'class',
-    'p': 'pass',
     'b': 'break',
     't': 'try',
-    'x': 'except',  # eはelseで使ったのでx
+    'x': 'except',
     'l': 'lambda',
     'a': 'and',
-    # 'o' is used for 'from', so 'or' needs another char?
-    # ここでは仮に 'O' (大文字) を割り当てるなど工夫が必要
-    'O': 'or', 
-    'N': 'not',
-    'I': 'is',
-    'A': 'as',
-    'W': 'with',
+    
+    # --- 大文字 (衝突回避または2軍キーワード) ---
+    'P': 'pass',      # p はユーザー(print等)のために空ける
+    'O': 'or',        # o は from で使用済み
+    'N': 'not',       # n は in で使用済み
+    'I': 'is',        # i は if で使用済み
+    'A': 'as',        # a は and で使用済み
+    'W': 'with',      # w は while で使用済み
     'Y': 'yield',
     'G': 'global',
     'T': 'True',
     'F': 'False',
-    'Z': 'None',   # Nはnotで使ったのでZ
+    'Z': 'None',      # N は not で使用済み
     'S': 'assert',
     'U': 'async',
     'V': 'await',
-    # ...必要に応じて追加
+    
+    # --- 追加 (完全性のため) ---
+    'D': 'del',
+    'R': 'raise',
+    'C': 'continue',
+    'L': 'finally',   # Last
+    'Q': 'nonlocal',  # 他の文字が埋まっているためQ
 }
 
-# 逆引き用（コンパイル時のチェック用）
 RESERVED_CHARS = set(RESERVED_MAP.keys())
