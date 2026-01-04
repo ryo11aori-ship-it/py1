@@ -2,11 +2,12 @@
 @v 分 'tokenize'
 @v 入 'io'
 @v X 're'
+@v J 'json'
 @v 規 'spec_consts'
 @v 図 'RESERVED_MAP'
 @v 禁 'RESERVED_CHARS'
 @v p 'print'
-@v J 'open'
+@v O 'open'
 @v u 'read'
 @v v 'argv'
 @v h 'splitlines'
@@ -84,13 +85,15 @@
 @v 頭 'startswith'
 @v 尾 'endswith'
 @v 報 'TokenInfo'
-@v ア 'ascii'
 @v 逃 'unicode_escape'
+@v F 'False'
+@v ダ 'dumps'
 $
 m s
 m 分
 m 入
 m X
+m J
 o 規 m 図, 禁
 
 d 警(言, 行):
@@ -103,7 +106,7 @@ i 寸(s.v) < 2:
  s.去(1)
 
 道 = s.v[1]
-文 = J(道, "モ", 号="符").u()
+文 = O(道, "モ", 号="符").u()
 本 = 文.h()
 
 辞 = {}
@@ -180,7 +183,7 @@ f 票 n 束:
     警("単", 幕[0])
    
    i 中 n 辞:
-    新.加(分.報(型, ア(辞[中]), 幕, 閉, 線))
+    新.加(分.報(型, J.ダ(辞[中], ensure_ascii=F), 幕, 閉, 線))
    e:
     新.加(分.報(型, 身, 幕, 閉, 線))
   e:
