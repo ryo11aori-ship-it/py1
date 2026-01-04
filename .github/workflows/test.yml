@@ -1,0 +1,28 @@
+name: Test py1 Compiler
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Run Compiler Check
+      run: |
+        # コンパイル実行（標準出力を output.py に保存）
+        python py1.py example.py1 > output.py
+        
+        # コンパイル結果を表示（デバッグ用）
+        echo "=== Generated Python Code ==="
+        cat output.py
+        echo "==========================="
+        
+        # 生成されたコードを実行
+        python output.py
