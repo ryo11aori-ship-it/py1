@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-# py1.py -- py1 トランスパイラ（修正版：unicode_escape と \xNN の扱い改善）
+# py1.py -- py1 トランスパイラ（Unicode/エスケープ復元強化版）
+# - codecs.decode(..., 'unicode_escape') で \xNN / \uXXXX を展開
+# - 展開後に「Latin-1 表現のバイト列が str として残っている」場合は
+#   latin-1 -> utf-8 の復元を試みる（これが今回の \u00e6...\u0097... を直す）
 
 import sys
 import tokenize
@@ -18,18 +21,55 @@ def error(msg, line_num=None):
     sys.stderr.write(f"Error: {prefix}{msg}\n")
     had_error = True
 
-def parse_definitions(source_text):
-    r"""
-    parse @v 定義部.
-    - 右辺は生の文字列だが、'\x27' や '\uXXXX' のようなエスケープ表現が
-    含まれる可能性がある（compiler.py1 がそう書くため）。
+def _maybe_fix_latin1_bytes_as_str(s: str) -> str:
     """
+    s が「各バイトが U+00xx として入っている文字列」（Latin-1-as-str）なら
+    latin-1 -> utf-8 デコードを試み、結果にCJKなどの想定文字が含まれれば採用する。
+    そうでない場合は元の s を返す。
+    """
+    # 判断基準：文字列に U+0080..U+00FF の文字が一定比率以上含まれ、
+    #         UTF-8 として解釈すると CJK が現れる（簡易ヒューリスティック）
+    if not s:
+        return s
+
+    # count high-ord chars (above 127)
+    high = sum(1 for ch in s if ord(ch) > 127)
+    if high == 0:
+        return s
+
+    ratio = high / len(s)
+    # 比率が低いならおそらく普通の Unicode（例: 単語にアクセント）なので無視
+    if ratio < 0.3:
+        return s
+
+    try:
+        # treat each codepoint 0..255 as a byte value
+        b = bytes((ord(ch) & 0xFF) for ch in s)
+        candidate = b.decode('utf-8')
+    except Exception:
+        return s
+
+    # 判定：candidate にCJK（漢字ひらがなカタカナ）等が含まれるか
+    if any('\u3040' <= ch <= '\u30ff' or '\u4e00' <= ch <= '\u9fff' for ch in candidate):
+        return candidate
+    # そうでなければ採用しない
+    return s
+
+def parse_definitions(source_text):
+    """
+r"""
+parse @v 定義部.
+- 右辺は生の文字列だが、'\x27' や '\uXXXX' のようなエスケープ表現が
+  含まれる可能性がある（compiler.py1 がそのように出力するため）。
+- ここではまず unicode_escape を使ってエスケープを展開し、
+  さらに必要なら latin-1->utf-8 の復元を試みる。
+"""
     lines = source_text.splitlines()
     symbol_table = {}
     body_lines = []
     is_body = False
 
-    # 定義は @v <1char> '<any>' （単一引用で囲まれた右辺）
+    # @v <char> '<...>'
     def_pattern = re.compile(r"^@v\s+(.)\s+'([^']*)'\s*$")
 
     for i, line in enumerate(lines):
@@ -48,18 +88,21 @@ def parse_definitions(source_text):
             m = def_pattern.match(stripped)
             if not m:
                 error("Invalid syntax in definition phase.", line_num)
-                # 続行してデバッグ情報を集める
                 continue
 
             key = m.group(1)
             raw_value = m.group(2)
 
-            # ここが重要：raw_value 中の \xNN や \uNNNN を正しく展開する
+            # 1) \xNN や \uXXXX 等を展開 (例: '\x27' -> "'")
             try:
                 value = codecs.decode(raw_value, 'unicode_escape')
             except Exception:
-                # もし何かおかしければ、raw_value をそのまま使う
+                # 万が一失敗したら raw_value をそのまま使う
                 value = raw_value
+
+            # 2) もし value が「バイト列をそのまま str 化した」様に見えるなら
+            #    latin-1 -> utf-8 復元を試みる
+            value = _maybe_fix_latin1_bytes_as_str(value)
 
             if key in RESERVED_CHARS:
                 error(f"Character '{key}' is reserved by system.", line_num)
@@ -79,17 +122,14 @@ def transpile(source_path):
     global had_error
     had_error = False
 
-    # ソース読み取り（UTF-8 前提）
     with open(source_path, 'r', encoding='utf-8') as f:
         source_text = f.read()
 
     symbol_table, body_text = parse_definitions(source_text)
 
-    # 定義フェーズで重大なエラーがあればここで止める
     if had_error:
         sys.exit(1)
 
-    # tokenize はバイトストリームの readline を要求
     stream = io.BytesIO(body_text.encode('utf-8')).readline
     try:
         tokens = list(tokenize.tokenize(stream))
@@ -107,10 +147,8 @@ def transpile(source_path):
         t_line = tok.line
 
         if t_type == tokenize.NAME:
-            # NAME は 1 文字のみ許可
             if len(t_str) != 1:
                 error(f"Invalid identifier '{t_str}'. Only 1-char identifiers allowed.", t_start[0])
-                # 続行のためそのまま追加
                 new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
                 continue
 
@@ -122,11 +160,9 @@ def transpile(source_path):
                 new_tokens.append(TokenInfo(t_type, repl, t_start, t_end, t_line))
             else:
                 error(f"Undefined identifier '{t_str}'.", t_start[0])
-                # 続行するために元トークンを追加
                 new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
 
         elif t_type == tokenize.STRING:
-            # 本文ではダブルクォートのみ許可："x"
             if not (t_str.startswith('"') and t_str.endswith('"')):
                 error("Only double quotes allowed in body.", t_start[0])
                 new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
@@ -139,17 +175,14 @@ def transpile(source_path):
                 continue
 
             if inner in symbol_table:
-                # 実体 Unicode を含む安全な Python 文字列リテラルを生成（常にダブルクォート）
+                # safe_val: 実体Unicodeを含む安定した Python 文字列リテラル（常にダブルクォート）
                 safe_val = json.dumps(symbol_table[inner], ensure_ascii=False)
                 new_tokens.append(TokenInfo(tokenize.STRING, safe_val, t_start, t_end, t_line))
             else:
                 new_tokens.append(TokenInfo(tokenize.STRING, t_str, t_start, t_end, t_line))
-
         else:
-            # 他トークンは TokenInfo に統一して追加
             new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
 
-    # 最終エラーチェック
     if had_error:
         sys.exit(1)
 
@@ -162,10 +195,8 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python py1.py <source_file>")
         sys.exit(1)
-
     try:
         compiled_python = transpile(sys.argv[1])
-        # CI ではこの出力をファイルにリダイレクトしている想定
         print(compiled_python)
     except Exception as e:
         sys.stderr.write(str(e) + "\n")
