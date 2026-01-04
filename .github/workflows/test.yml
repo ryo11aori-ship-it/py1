@@ -41,13 +41,24 @@ jobs:
         python compiler_gen2.py compiler.py1 > compiler_gen3.py
         black compiler_gen3.py
 
-    # 3. 冪等性テスト
-    - name: 3. Verify Idempotency
+    # 3. 厳密な同一性検証 (SHA256)
+    - name: 3. Verify Strict Idempotency (SHA256)
       run: |
-        if diff -q compiler_gen2.py compiler_gen3.py; then
-          echo "SUCCESS: Compiler is idempotent."
+        echo "--- Calculating SHA256 Checksums ---"
+        sha256sum compiler_gen2.py > gen2.sha256
+        sha256sum compiler_gen3.py > gen3.sha256
+        
+        cat gen2.sha256
+        cat gen3.sha256
+        
+        # ハッシュ値のみを抽出して比較
+        HASH2=$(cut -d ' ' -f 1 gen2.sha256)
+        HASH3=$(cut -d ' ' -f 1 gen3.sha256)
+        
+        if [ "$HASH2" = "$HASH3" ]; then
+          echo "SUCCESS: Byte-level reproducibility achieved."
         else
-          echo "FAILURE: Diff detected."
+          echo "FAILURE: Checksums do not match."
           exit 1
         fi
 
@@ -69,22 +80,15 @@ jobs:
     # 6. IRコンパイラのコンパイルと実行
     - name: 6. IR Compilation (FizzBuzz IR)
       run: |
-        echo "--- Compiling the IR Compiler ---"
         python compiler_gen3.py compiler_ir.py1 > compiler_ir.py
-        
-        echo "--- Generating FizzBuzz IR ---"
         python compiler_ir.py fizzbuzz_while.py1 > fizzbuzz.ir
-        
-        # デバッグ用: IRの中身を表示
         cat fizzbuzz.ir
 
-    # 7. VMのコンパイルと実行 (Final Stage)
-    - name: 7. VM Execution (FizzBuzz)
+    # 7. ネイティブVM (C言語) のビルドと実行
+    - name: 7. Native VM Execution (C Implementation)
       run: |
-        echo "--- Compiling the VM ---"
-        # py1言語で書かれたVMを、Pythonに変換
-        python compiler_gen3.py vm.py1 > vm.py
+        echo "--- Compiling VM in C ---"
+        gcc -o vm vm.c
         
-        echo "--- Executing FizzBuzz on VM ---"
-        # VM(Python)上で IRコード を実行
-        python vm.py fizzbuzz.ir
+        echo "--- Executing FizzBuzz on Native VM ---"
+        ./vm fizzbuzz.ir
