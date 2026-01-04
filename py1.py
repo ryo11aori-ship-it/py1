@@ -19,12 +19,10 @@ def error(msg, line_num=None):
     had_error = True
 
 def parse_definitions(source_text):
-    """
+    r"""
     parse @v 定義部.
     - 右辺は生の文字列だが、'\x27' や '\uXXXX' のようなエスケープ表現が
-      含まれる可能性がある（compiler.py1 がそう書くため）。
-    - そこで codecs.decode(..., 'unicode_escape') を用いて、\xNN / \uNNNN 等を展開する。
-      既に実体の Unicode が入っている場合は何も壊さない（安全）。
+    含まれる可能性がある（compiler.py1 がそう書くため）。
     """
     lines = source_text.splitlines()
     symbol_table = {}
