@@ -67,16 +67,17 @@ jobs:
         python output_uni.py
 
     # 【新設】6. IRコンパイラテスト
-    - name: 6. IR Compilation Test (Native Step 1)
+        # ... (前略) ...
+
+    # 6. IRコンパイラテスト (FizzBuzz)
+    - name: 6. IR Compilation Test (FizzBuzz)
       run: |
         echo "--- Compiling the IR Compiler ---"
-        # 1. IRコンパイラ(py1) を コンパイラ(Gen3) で Python に変換
         python compiler_gen3.py compiler_ir.py1 > compiler_ir.py
         
-        # 2. IRコンパイラを実行して、ir_test.py1 を IR に変換
-        echo "--- Generating IR Code ---"
-        python compiler_ir.py ir_test.py1 > output.ir
+        echo "--- Generating FizzBuzz IR ---"
+        python compiler_ir.py fizzbuzz_while.py1 > fizzbuzz.ir
         
-        # 3. 結果を表示
-        echo "--- Generated IR ---"
-        cat output.ir
+        echo "--- Generated IR Output ---"
+        cat fizzbuzz.ir
+
