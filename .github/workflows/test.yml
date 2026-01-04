@@ -3,8 +3,11 @@ name: Test py1 Compiler & Self-Hosting
 on: [push, pull_request]
 
 env:
-  # Pythonの出力を強制的にUTF-8にする（文字化け防止の決定打）
+  # Pythonの出力エンコーディング
   PYTHONIOENCODING: utf-8
+  # Linuxシステムのロケール設定（文字化け対策の念押し）
+  LANG: C.UTF-8
+  LC_ALL: C.UTF-8
 
 jobs:
   build:
@@ -28,14 +31,12 @@ jobs:
         head -n 5 compiler_gen2.py
 
     # 2. セルフホスト（世代2 -> 世代3）
-    # 生成されたコンパイラで、コンパイラ自身をコンパイルする
     - name: 2. Bootstrap Generation 2 (compiler_gen2.py -> compiler_gen3.py)
       run: |
         echo "--- Self-Hosting: compiler_gen2.py -> compiler.py1 -> compiler_gen3.py ---"
         python compiler_gen2.py compiler.py1 > compiler_gen3.py
 
     # 3. 冪等性テスト（Idempotency Test）
-    # コンパイラが安定していれば、Gen2 と Gen3 は完全に一致するはず
     - name: 3. Verify Idempotency (Gen2 vs Gen3)
       run: |
         echo "--- Comparing Generation 2 and Generation 3 Code ---"
