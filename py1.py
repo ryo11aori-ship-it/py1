@@ -34,7 +34,6 @@ def parse_definitions(source_text):
                 char_key = match.group(1)
                 raw_value = match.group(2)
                 
-                # エスケープシーケンスを解釈
                 try:
                     value = raw_value.encode('utf-8').decode('unicode_escape')
                 except Exception:
@@ -65,6 +64,7 @@ def transpile(source_path):
     new_tokens = []
     
     for tok in tokens:
+        # TokenInfoの要素を分解
         token_type = tok.type
         token_string = tok.string
         start = tok.start
@@ -76,9 +76,10 @@ def transpile(source_path):
                 error(f"Invalid identifier '{token_string}'. Only 1-char identifiers allowed.", start[0])
 
             if token_string in RESERVED_MAP:
-                new_tokens.append((token_type, RESERVED_MAP[token_string], start, end, line_text))
+                # TokenInfoオブジェクトとして追加（Tuple廃止）
+                new_tokens.append(tokenize.TokenInfo(token_type, RESERVED_MAP[token_string], start, end, line_text))
             elif token_string in symbol_table:
-                new_tokens.append((token_type, symbol_table[token_string], start, end, line_text))
+                new_tokens.append(tokenize.TokenInfo(token_type, symbol_table[token_string], start, end, line_text))
             else:
                 error(f"Undefined identifier '{token_string}'.", start[0])
 
@@ -91,15 +92,14 @@ def transpile(source_path):
                 error(f"String literal must be exactly 1 char. Found: '{inner}'", start[0])
             
             if inner in symbol_table:
-                # 【重要変更】 ascii() を使用して強制的にエスケープ付きASCII文字列にする
-                # 例: "日本語" -> "'\u65e5\u672c\u8a9e'"
-                # これによりファイルエンコーディング問題を回避
-                safe_val = ascii(symbol_table[inner])
-                new_tokens.append((token_type, safe_val, start, end, line_text))
+                # repr() を使用して安全なPython文字列リテラルにする
+                safe_val = repr(symbol_table[inner])
+                new_tokens.append(tokenize.TokenInfo(token_type, safe_val, start, end, line_text))
             else:
-                new_tokens.append((tokenize.STRING, token_string, start, end, line_text))
+                new_tokens.append(tokenize.TokenInfo(tokenize.STRING, token_string, start, end, line_text))
 
         else:
+            # そのままの場合も TokenInfo なのでOK
             new_tokens.append(tok)
 
     result_code = tokenize.untokenize(new_tokens)
