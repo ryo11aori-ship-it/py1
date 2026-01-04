@@ -33,9 +33,9 @@
 @v モ 'r'
 @v 符 'utf-8'
 @v 使 'Usage: python py1.py <source_file>'
-# 【修正】正規表現の定義をシンプルに。バックスラッシュは1つでOK。
-# py1.pyがunicode_escapeする際、'\s' はそのまま '\s' (2文字) として扱われるため
-@v 則 '^@v\s+(.)\s+\x27([^\x27]*)\x27\s*$'
+# 【修正】バックスラッシュを4つ('\\\\')にして、確実に '\s' を正規表現エンジンに渡す
+# これで DeprecationWarning も消え、挙動が安定するはず
+@v 則 '^@v\\\\s+(.)\\\\s+\x27([^\x27]*)\x27\\\\s*$'
 @v エ 'Error: [Line {}] {}\n'
 @v 予 'Reserved: {}'
 @v 済 'Redefined: {}'
