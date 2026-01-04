@@ -32,7 +32,14 @@ def parse_definitions(source_text):
             match = def_pattern.match(stripped)
             if match:
                 char_key = match.group(1)
-                value = match.group(2)
+                raw_value = match.group(2)
+                
+                # 【重要】エスケープシーケンスを解釈する
+                # これにより '\n' (2文字) が 本物の改行コード (1文字) になる
+                try:
+                    value = raw_value.encode('utf-8').decode('unicode_escape')
+                except Exception:
+                    value = raw_value
 
                 if char_key in RESERVED_CHARS:
                     error(f"Character '{char_key}' is reserved by system.", line_num)
@@ -77,7 +84,6 @@ def transpile(source_path):
                 error(f"Undefined identifier '{token_string}'.", start[0])
 
         elif token_type == tokenize.STRING:
-            # 本文中の文字列は "" のみ、かつ中身は1文字のみ
             if not (token_string.startswith('"') and token_string.endswith('"')):
                 error("Only double quotes allowed in body.", start[0])
             
@@ -86,11 +92,11 @@ def transpile(source_path):
                 error(f"String literal must be exactly 1 char. Found: '{inner}'", start[0])
             
             if inner in symbol_table:
-                # 【修正箇所】 展開時にエスケープ処理を追加！
-                # \ と " をエスケープして、構文破壊を防ぐ
-                raw_val = symbol_table[inner]
-                safe_val = raw_val.replace('\\', '\\\\').replace('"', '\\"')
-                new_tokens.append((token_type, f'"{safe_val}"', start, end, line_text))
+                # 【重要】Pythonの文字列表現(repr)をそのまま使う
+                # これにより " や \ や 改行 が適切にエスケープされたコードが生成される
+                # 例: 改行コード -> '\n' (という文字列) に変換される
+                safe_val = repr(symbol_table[inner])
+                new_tokens.append((token_type, safe_val, start, end, line_text))
             else:
                 new_tokens.append((tokenize.STRING, token_string, start, end, line_text))
 
