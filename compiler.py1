@@ -2,9 +2,9 @@
 @v K 'tokenize'
 @v M 'io'
 @v X 're'
-@v Ψ 'spec_consts'
-@v ρ 'RESERVED_MAP'
-@v H 'RESERVED_CHARS'
+@v 規 'spec_consts'
+@v 図 'RESERVED_MAP'
+@v 禁 'RESERVED_CHARS'
 @v p 'print'
 @v J 'open'
 @v u 'read'
@@ -13,34 +13,34 @@
 @v z 'strip'
 @v B 'BytesIO'
 @v E 'encode'
-@v δ 'decode'
-@v μ 'untokenize'
+@v 解 'decode'
+@v 逆 'untokenize'
 @v g 'group'
-@v c 'compile'
-@v φ 'match'
+@v 組 'compile'
+@v 合 'match'
 @v k 'type'
-@v σ 'string'
-@v β 'start'
-@v q 'end'
+@v 字 'string'
+@v 始 'start'
+@v 終 'end'
 @v y 'line'
 @v j 'NAME'
-@v Σ 'STRING'
-@v χ 'exit'
-@v ε 'stderr'
+@v 列 'STRING'
+@v 去 'exit'
+@v 誤 'stderr'
 $
-φ s
-φ K
-φ M
-φ X
-o Ψ m ρ, H
+m s
+m K
+m M
+m X
+o 規 m 図, 禁
 
 d O(a, l):
- s.ε.y(f"Error: [Line {l}] {a}\n")
- s.χ(1)
+ s.誤.y(f"Error: [Line {l}] {a}\n")
+ s.去(1)
 
 i len(s.v) < 2:
  p("Usage: python py1.py <source_file>")
- s.χ(1)
+ s.去(1)
 
 P = s.v[1]
 T = J(P, "r", E="utf-8").u()
@@ -49,7 +49,7 @@ L = T.h()
 Q = {}
 W = []
 F = 0
-A = X.c(r"^@v\s+([a-zA-Z_0-9\u00a0-\uffff])\s+'([^']*)'\s*$")
+A = X.組(r"^@v\s+(.)\s+'([^']*)'\s*$")
 
 f N n g(len(L)):
  I = L[N].z()
@@ -60,20 +60,20 @@ f N n g(len(L)):
   
   i not I:
    P
-  i I.β("#"):
+  i I.始("#"):
    P
   
-  Z = A.φ(I)
+  Z = A.合(I)
   i Z:
    K_ = Z.g(1)
    V = Z.g(2)
-   i K_ n H:
+   i K_ n 禁:
     O(f"Reserved: {K_}", N+1)
    i K_ n Q:
     O(f"Redefined: {K_}", N+1)
    Q[K_] = V
   e:
-   O(f"Invalid def: {I}", N+1)
+   O("Invalid def", N+1)
  e:
   W.append(L[N])
 
@@ -87,17 +87,17 @@ Ns = []
 
 f t n Ts:
  Y_ = t.k
- S_ = t.σ
- st = t.β
- en = t.q
+ S_ = t.字
+ st = t.始
+ en = t.終
  ln = t.y
 
  i Y_ == K.j:
   i len(S_) > 1:
    O(f"Long name: {S_}", st[0])
   
-  i S_ n ρ:
-   Ns.append((Y_, ρ[S_]))
+  i S_ n 図:
+   Ns.append((Y_, 図[S_]))
   e:
    i S_ n Q:
     Ns.append((Y_, Q[S_]))
@@ -105,8 +105,8 @@ f t n Ts:
     O(f"Undefined: {S_}", st[0])
  
  e:
-  i Y_ == K.Σ:
-   i not (S_.β('"') a S_.q('"')):
+  i Y_ == K.列:
+   i not (S_.始('"') a S_.終('"')):
     O("Use double quotes", st[0])
    
    in_ = S_[1:-1]
@@ -118,7 +118,7 @@ f t n Ts:
    e:
     Ns.append((Y_, S_))
   e:
-   Ns.append((t.k, t.σ))
+   Ns.append((t.k, t.字))
 
-res = K.μ(Ns).δ("utf-8")
+res = K.逆(Ns).解("utf-8")
 p(res)
