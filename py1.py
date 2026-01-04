@@ -34,8 +34,7 @@ def parse_definitions(source_text):
                 char_key = match.group(1)
                 raw_value = match.group(2)
                 
-                # 【重要】エスケープシーケンスを解釈する
-                # これにより '\n' (2文字) が 本物の改行コード (1文字) になる
+                # エスケープシーケンスを解釈
                 try:
                     value = raw_value.encode('utf-8').decode('unicode_escape')
                 except Exception:
@@ -92,10 +91,10 @@ def transpile(source_path):
                 error(f"String literal must be exactly 1 char. Found: '{inner}'", start[0])
             
             if inner in symbol_table:
-                # 【重要】Pythonの文字列表現(repr)をそのまま使う
-                # これにより " や \ や 改行 が適切にエスケープされたコードが生成される
-                # 例: 改行コード -> '\n' (という文字列) に変換される
-                safe_val = repr(symbol_table[inner])
+                # 【重要変更】 ascii() を使用して強制的にエスケープ付きASCII文字列にする
+                # 例: "日本語" -> "'\u65e5\u672c\u8a9e'"
+                # これによりファイルエンコーディング問題を回避
+                safe_val = ascii(symbol_table[inner])
                 new_tokens.append((token_type, safe_val, start, end, line_text))
             else:
                 new_tokens.append((tokenize.STRING, token_string, start, end, line_text))
