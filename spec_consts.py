@@ -5,8 +5,8 @@ RESERVED_MAP = {
     'e': 'else',
     'f': 'for',
     
-    # 【変更】ここがチューリング完全性の証
-    'W': 'while', # 元は 'w' でしたが、大文字 'W' を while に割り当てて強調
+    # チューリング完全性の証 (while)
+    'W': 'while',
     
     'b': 'break',
     'C': 'continue',
@@ -47,14 +47,12 @@ RESERVED_MAP = {
     
     # --- 定数 ---
     'T': 'True',
-    # 'F': 'False', # Fはシステム予約だが、compiler.py1でFalseとして使わないなら定義不要
+    'F': 'False', # 【修正】ここを有効化！
     'Z': 'None',
     
     # --- パターンマッチ ---
     'M': 'match',
     'K': 'case',
-    
-    # 'w': 'with', # 小文字wをwithに逃がすか、今回は未定義にしておく
 }
 
 RESERVED_CHARS = set(RESERVED_MAP.keys())
