@@ -40,7 +40,7 @@ def parse_definitions(source_text):
             key = m.group(1)
             raw_value = m.group(2)
             
-            # 【修正】バックスラッシュがある場合のみデコードする
+            # バックスラッシュがある場合のみデコード
             value = raw_value
             if "\\" in raw_value:
                 try:
@@ -105,7 +105,7 @@ def transpile(source_path):
                 new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
                 continue
             if inner in symbol_table:
-                # 【修正】ensure_ascii=False を削除（デフォルトTrue）
+                # デフォルトの json.dumps (ensure_ascii=True)
                 safe_val = json.dumps(symbol_table[inner])
                 new_tokens.append(TokenInfo(tokenize.STRING, safe_val, t_start, t_end, t_line))
             else:
