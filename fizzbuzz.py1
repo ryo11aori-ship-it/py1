@@ -1,0 +1,18 @@
+@v p 'print'
+@v r 'range'
+@v F 'Fizz'
+@v B 'Buzz'
+@v Z 'FizzBuzz'
+@v k 'i'
+$
+f k n r(1, 101):
+ i k % 15 == 0:
+  p("Z")
+ e:
+  i k % 3 == 0:
+   p("F")
+  e:
+   i k % 5 == 0:
+    p("B")
+   e:
+    p(k)
