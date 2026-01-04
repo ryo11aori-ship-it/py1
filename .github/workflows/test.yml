@@ -2,6 +2,10 @@ name: Test py1 Compiler & Self-Hosting
 
 on: [push, pull_request]
 
+env:
+  # これが重要！Pythonの出力を強制的にUTF-8にする
+  PYTHONIOENCODING: utf-8
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -35,22 +39,23 @@ jobs:
         head -n 20 compiler_bootstrapped.py
         echo "..."
 
-    # ステップ3: 生まれたての新コンパイラで FizzBuzz をコンパイルしてみる
+    # ステップ3: 生まれたての新コンパイラで FizzBuzz をコンパイル
     # compiler_bootstrapped.py (子) -> fizzbuzz.py1 -> output_fb_v2.py
-    - name: 3. Self-Hosted Compiler Test
+    - name: 3. Self-Hosted Compiler Test (FizzBuzz)
       run: |
-        echo "--- Testing Bootstrapped Compiler ---"
-        # ここで python compiler_bootstrapped.py を呼んでいるのがポイント
+        echo "--- Testing Bootstrapped Compiler with FizzBuzz ---"
         python compiler_bootstrapped.py fizzbuzz.py1 > output_fb_v2.py
         
-        echo "--- Generated FizzBuzz Code ---"
-        cat output_fb_v2.py
-
-    # ステップ4: 最終的に生成されたFizzBuzzが正しく動くか実行
-    - name: 4. Run Final FizzBuzz
-      run: |
         echo "--- Running Final FizzBuzz ---"
         python output_fb_v2.py
-        python py1.py unicode_test.py1 > output_uni.py
-        python output_uni.py
 
+    # ステップ4: 新コンパイラで Unicodeテスト をコンパイル（文字化け解消確認）
+    # compiler_bootstrapped.py (子) -> unicode_test.py1 -> output_uni_v2.py
+    - name: 4. Self-Hosted Compiler Test (Unicode)
+      run: |
+        echo "--- Testing Bootstrapped Compiler with Unicode ---"
+        # ここも py1.py ではなく compiler_bootstrapped.py を使う（完全制覇）
+        python compiler_bootstrapped.py unicode_test.py1 > output_uni_v2.py
+        
+        echo "--- Running Unicode Test ---"
+        python output_uni_v2.py
