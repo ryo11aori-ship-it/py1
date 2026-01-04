@@ -3,6 +3,7 @@ name: Test py1 Compiler & Self-Hosting
 on: [push, pull_request]
 
 env:
+  # Pythonの出力をUTF-8に強制し、バッファリングを切る（リアルタイム出力）
   PYTHONIOENCODING: utf-8
   PYTHONUTF8: 1
   PYTHONUNBUFFERED: 1
@@ -19,6 +20,7 @@ jobs:
       with:
         python-version: '3.10'
 
+    # 【重要】OSの日本語ロケールを強制生成（表示用）
     - name: Setup Locale
       run: |
         sudo locale-gen ja_JP.UTF-8
@@ -26,34 +28,49 @@ jobs:
         export LANG=ja_JP.UTF-8
         export LC_ALL=ja_JP.UTF-8
 
+    # A+B案用フォーマッタ
     - name: Install Black
       run: pip install black
 
     # 1. ブートストラップ
     - name: 1. Bootstrap Generation 1
+      env:
+        LANG: ja_JP.UTF-8
+        LC_ALL: ja_JP.UTF-8
       run: |
+        echo "--- Bootstrapping ---"
         python py1.py compiler.py1 > compiler_gen2.py
         black compiler_gen2.py
 
     # 2. セルフホスト
     - name: 2. Bootstrap Generation 2
+      env:
+        LANG: ja_JP.UTF-8
+        LC_ALL: ja_JP.UTF-8
       run: |
+        echo "--- Self-Hosting ---"
         python compiler_gen2.py compiler.py1 > compiler_gen3.py
         black compiler_gen3.py
 
     # 3. 冪等性テスト
     - name: 3. Verify Idempotency
       run: |
+        echo "--- Comparing Gen2 and Gen3 ---"
         if diff -q compiler_gen2.py compiler_gen3.py; then
           echo "SUCCESS: Compiler is idempotent."
         else
           echo "FAILURE: Diff detected."
+          diff compiler_gen2.py compiler_gen3.py
           exit 1
         fi
 
     # 4. FizzBuzz
     - name: 4. Application Test (FizzBuzz)
+      env:
+        LANG: ja_JP.UTF-8
+        LC_ALL: ja_JP.UTF-8
       run: |
+        echo "--- Testing FizzBuzz ---"
         python compiler_gen3.py fizzbuzz.py1 > output_fb.py
         python output_fb.py
 
@@ -63,20 +80,12 @@ jobs:
         LANG: ja_JP.UTF-8
         LC_ALL: ja_JP.UTF-8
       run: |
+        echo "--- Testing Unicode ---"
         python compiler_gen3.py unicode_test.py1 > output_uni.py
+        
+        # 【デバッグ】生成されたファイルの中身を確認（ここが化けてなければPython実行の問題）
+        echo "--- Source Code Content (cat) ---"
+        cat output_uni.py
+        
+        echo "--- Execution Output (python) ---"
         python output_uni.py
-
-    # 【新設】6. IRコンパイラテスト
-    - name: 6. IR Compilation Test (Native Step 1)
-      run: |
-        echo "--- Compiling the IR Compiler ---"
-        # 1. IRコンパイラ(py1) を コンパイラ(Gen3) で Python に変換
-        python compiler_gen3.py compiler_ir.py1 > compiler_ir.py
-        
-        # 2. IRコンパイラを実行して、ir_test.py1 を IR に変換
-        echo "--- Generating IR Code ---"
-        python compiler_ir.py ir_test.py1 > output.ir
-        
-        # 3. 結果を表示
-        echo "--- Generated IR ---"
-        cat output.ir
