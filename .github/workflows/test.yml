@@ -4,7 +4,6 @@ on: [push, pull_request]
 
 env:
   PYTHONIOENCODING: utf-8
-  # ここではまだ設定せず、step内で定義したロケールを使う
 
 jobs:
   build:
@@ -18,7 +17,7 @@ jobs:
       with:
         python-version: '3.10'
 
-    # 【重要】日本語ロケールを強制生成・設定する
+    # 日本語ロケールの強制生成（echoコマンド等に効くため残す）
     - name: Setup Locale
       run: |
         sudo locale-gen ja_JP.UTF-8
@@ -72,7 +71,7 @@ jobs:
         LC_ALL: ja_JP.UTF-8
       run: |
         echo "--- Testing Unicode ---"
-        # 環境確認: echoコマンドで日本語が出るかチェック（これで化けるならGitHub自体の問題）
+        # 環境チェック（echoは成功している）
         echo "Environment Check: 日本語テスト開始"
         
         python compiler_gen3.py unicode_test.py1 > output_uni.py
