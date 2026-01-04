@@ -15,7 +15,8 @@ def parse_definitions(source_text):
     body_lines = []
     is_body = False
     
-    def_pattern = re.compile(r"^@v\s+([a-zA-Z_])\s+'([^']*)'\s*$")
+    # 任意の1文字(.)を許可。ただし改行は除く
+    def_pattern = re.compile(r"^@v\s+(.)\s+'([^']*)'\s*$")
 
     for i, line in enumerate(lines):
         line_num = i + 1
