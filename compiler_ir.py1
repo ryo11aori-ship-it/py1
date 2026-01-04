@@ -1,106 +1,148 @@
 @v s 'sys'
-@v a 'ast'
-@v p 'print'
-@v O 'open'
-@v R 'read'
-@v I 'isinstance'
-@v E 'exit'
-@v w 'write'
-@v S 'stderr'
-@v f 'format'
-@v M 'Module'
-@v X 'Expr'
-@v C 'Call'
-@v K 'Constant'
-@v B 'BinOp'
-@v A 'Add'
-@v U 'Sub'
-@v L 'Mult'
-@v D 'Div'
-@v n 'node'
-@v v 'value'
-@v l 'left'
-@v r 'right'
-@v o 'op'
-@v g 'args'
-@v b 'body'
-@v y 'style'
-@v i 'if'
-@v e 'else'
+@v 星 'ast'
+@v 表 'print'
+@v 開 'open'
+@v 読 'read'
+@v 型 'isinstance'
+@v 逝 'exit'
+@v 書 'write'
+@v 誤 'stderr'
+@v 形 'format'
+@v 寸 'len'
+@v 裂 'splitlines'
+@v 削 'strip'
+@v 引 'argv'
+@v 解 'parse'
+@v 規 're'
+@v 組 'compile'
+@v 検 'match'
+@v グ 'group'
+
+# AST Types (クラス名)
+@v 根 'Module'
+@v 式 'Expr'
+@v 呼 'Call'
+@v 定 'Constant'
+@v 二 'BinOp'
+@v 足 'Add'
+@v 減 'Sub'
+@v 掛 'Mult'
+@v 除 'Div'
+@v 名 'Name'
+
+# AST Attributes (属性名)
+@v 値 'value'
+@v 左 'left'
+@v 右 'right'
+@v 算 'op'
+@v 関 'func'
+@v 識別 'id'
+@v 類 'args'
+@v 体 'body'
+
+# Misc
+@v 範 'range'
+@v 改 '\n'
+@v 符 'utf-8'
+@v 読モード 'r'
+@v メ 'Usage: python compiler_ir.py <source_file>\n'
+@v ド '$'
+@v シ '#'
+@v 号 'encoding'
+# 正規表現（バックスラッシュ回避のため空白は[ \t]で表現）
+@v 則 '^@v[ \t]+(.)[ \t]+\x27([^\x27]*)\x27[ \t]*$'
+
 $
 m s
-m a
+m 星
+m 規
 
-# ---------------------------------------------------------
-# ASTノードを再帰的に訪問してIRを出力する関数
-# ---------------------------------------------------------
-d V(n):
- # --- 式 (Expression) ---
- i I(n, a.X):
-  V(n.v)
+# 定義辞書
+辞 = {}
 
- # --- 定数 (Constant: 数字や文字列) ---
- i I(n, a.K):
-  # PUSH <値>
-  p("PUSH {}".f(n.v))
+# Visitor関数
+d 巡(節):
+ # --- 式 (Expr) ---
+ i 型(節, 星.式):
+  巡(節.値)
 
- # --- 二項演算 (BinOp: + - * /) ---
- i I(n, a.B):
-  # 1. 左辺を処理 (PUSHされる)
-  V(n.l)
-  # 2. 右辺を処理 (PUSHされる)
-  V(n.r)
-  # 3. 演算命令
-  i I(n.o, a.A):
-   p("ADD")
-  i I(n.o, a.U):
-   p("SUB")
-  i I(n.o, a.L):
-   p("MUL")
-  i I(n.o, a.D):
-   p("DIV")
+ # --- 定数 (Constant) ---
+ i 型(節, 星.定):
+  表("PUSH {}".形(節.値))
+
+ # --- 二項演算 (BinOp) ---
+ i 型(節, 星.二):
+  # 逆ポーランド記法順 (左右を先に処理)
+  巡(節.左)
+  巡(節.右)
+  
+  i 型(節.算, 星.足):
+   表("ADD")
+  i 型(節.算, 星.減):
+   表("SUB")
+  i 型(節.算, 星.掛):
+   表("MUL")
+  i 型(節.算, 星.除):
+   表("DIV")
 
  # --- 関数呼び出し (Call) ---
- i I(n, a.C):
-  # 引数を順番に処理 (スタックに積む)
-  f x n n.g:
-   V(x)
+ i 型(節, 星.呼):
+  # 引数を処理
+  f 項 n 節.類:
+   巡(項)
   
-  # 関数名を確認 (今は print のみ対応)
-  # ast.Name ノードの id を見る必要があるが、
-  # 簡易的に func.id を参照する (py1では属性アクセスはそのまま通る)
-  i n.func.id == "print":
-   p("PRINT")
+  # 関数名を解決 ("print" かどうか)
+  # py1ソースでは1文字エイリアスになっているので辞書で引く
+  真名 = ""
+  i 型(節.関, 星.名):
+   仮名 = 節.関.識別
+   i 仮名 n 辞:
+    真名 = 辞[仮名]
+   e:
+    真名 = 仮名
+  
+  i 真名 == "print":
+   表("PRINT")
 
- # --- モジュール (Module: 全体のルート) ---
- i I(n, a.M):
-  f x n n.b:
-   V(x)
+ # --- モジュール (Module) ---
+ i 型(節, 星.根):
+  f 文 n 節.体:
+   巡(文)
 
 # ---------------------------------------------------------
-# メイン処理
+# Main
 # ---------------------------------------------------------
-i len(s.argv) < 2:
- s.S.w("Usage: python compiler_ir.py <source_file>\n")
- s.E(1)
+i 寸(s.引) < 2:
+ s.誤.書(メ)
+ s.逝(1)
 
-# ファイル読み込み
-# @v などの定義行は ast.parse が理解できないため、
-# '$' 以降（本文）だけを取り出して解析する
-txt = O(s.argv[1], "r", encoding="utf-8").R()
-lines = txt.splitlines()
-body_txt = ""
-is_body = False
+パス = s.引[1]
+全文 = 開(パス, "読モード", 号="符").読()
+行列 = 全文.裂()
 
-f line n lines:
- i is_body:
-  body_txt = body_txt + line + "\n"
+身 = ""
+旗 = 0
+パタン = 規.組("則")
+
+f 行 n 行列:
+ 削行 = 行.削()
+ i 旗:
+  身 = 身 + 行 + "改"
  e:
-  i line.strip() == "$":
-   is_body = True
+  i 削行 == "ド":
+   旗 = 1
+   C
+  
+  # @v 定義を簡易パースして辞書に入れる
+  # これにより、ir_test.py1 側の '@v 表 print' を理解できるようにする
+  当 = パタン.検(削行)
+  i 当:
+   鍵 = 当.グ(1)
+   値 = 当.グ(2)
+   辞[鍵] = 値
 
 # AST解析
-tree = a.parse(body_txt)
+木 = 星.解(身)
 
-# コンパイル開始 (IR出力)
-V(tree)
+# コンパイル実行
+巡(木)
