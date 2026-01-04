@@ -77,6 +77,7 @@
 @v 負 '"LT"'
 @v 喚 '"CALL {}"'
 @v 得 '"GET"'
+@v 置 '"SET"'
 
 # Misc
 @v 改 '"\\n"'
@@ -143,10 +144,20 @@ d 巡(節):
 
  # Assignment
  i 確(節, 星.代):
+  # 値を先に積む [Val]
   巡(節.価)
   f 項 n 節.タ:
    i 確(項, 星.名):
+    # STORE x: Pops Val, saves to x
     表(蔵.形(項.識))
+   i 確(項, 星.字):
+    # D[k] = v
+    # スタックは [Val] がある状態
+    # 次に [Val, Obj, Key] の順にしたい
+    巡(項.価) # Obj (D)
+    巡(項.ス) # Key (k)
+    # SET: Pops Key, Obj, Val -> Obj[Key]=Val
+    表(置)
 
  # Operations
  i 確(節, 星.二):
@@ -210,17 +221,17 @@ d 巡(節):
   巡(節.価)
 
  i 確(節, 星.呼):
-  # Args
   f 項 n 節.類:
    巡(項)
   
-  # Method call: obj.method(args)
+  # Method: obj.method(args)
   i 確(節.関, 星.属):
    巡(節.関.価) # Push object
    # メソッド名を引数に CALL
+   # 【修正】属性 -> 性
    表(喚.形(節.関.性))
 
-  # Function call: func(args)
+  # Function: func(args)
   i 確(節.関, 星.名):
    仮 = 節.関.識
    真 = 仮
@@ -230,7 +241,6 @@ d 巡(節):
    i 真 == 刷:
     表(印)
    e:
-    # 一般関数呼び出し (例: len(), int())
     表(喚.形(真))
 
  # Module
