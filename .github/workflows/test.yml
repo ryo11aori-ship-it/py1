@@ -3,11 +3,8 @@ name: Test py1 Compiler & Self-Hosting
 on: [push, pull_request]
 
 env:
-  # Pythonの出力エンコーディング
+  # これさえあれば、Pythonは必ずUTF-8で出力する
   PYTHONIOENCODING: utf-8
-  # Linuxシステムのロケール設定（en_US.UTF-8 に変更）
-  LANG: en_US.UTF-8
-  LC_ALL: en_US.UTF-8
 
 jobs:
   build:
@@ -26,8 +23,6 @@ jobs:
       run: |
         echo "--- Bootstrapping: py1.py -> compiler.py1 -> compiler_gen2.py ---"
         python py1.py compiler.py1 > compiler_gen2.py
-        
-        # 簡易チェック
         head -n 5 compiler_gen2.py
 
     # 2. セルフホスト（世代2 -> 世代3）
@@ -36,7 +31,7 @@ jobs:
         echo "--- Self-Hosting: compiler_gen2.py -> compiler.py1 -> compiler_gen3.py ---"
         python compiler_gen2.py compiler.py1 > compiler_gen3.py
 
-    # 3. 冪等性テスト（Idempotency Test）
+    # 3. 冪等性テスト
     - name: 3. Verify Idempotency (Gen2 vs Gen3)
       run: |
         echo "--- Comparing Generation 2 and Generation 3 Code ---"
@@ -48,7 +43,7 @@ jobs:
           exit 1
         fi
 
-    # 4. アプリケーションテスト (FizzBuzz)
+    # 4. FizzBuzz
     - name: 4. Application Test (FizzBuzz)
       run: |
         echo "--- Testing FizzBuzz with Gen3 Compiler ---"
@@ -59,5 +54,9 @@ jobs:
     - name: 5. Unicode Test
       run: |
         echo "--- Testing Unicode with Gen3 Compiler ---"
+        # コンパイル
         python compiler_gen3.py unicode_test.py1 > output_uni.py
+        
+        # 実行
+        echo "--- Running Unicode Output ---"
         python output_uni.py
