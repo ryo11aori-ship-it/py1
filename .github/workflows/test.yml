@@ -5,9 +5,9 @@ on: [push, pull_request]
 env:
   # Pythonの出力エンコーディング
   PYTHONIOENCODING: utf-8
-  # Linuxシステムのロケール設定（文字化け対策の念押し）
-  LANG: C.UTF-8
-  LC_ALL: C.UTF-8
+  # Linuxシステムのロケール設定（en_US.UTF-8 に変更）
+  LANG: en_US.UTF-8
+  LC_ALL: en_US.UTF-8
 
 jobs:
   build:
