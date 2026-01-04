@@ -1,11 +1,11 @@
 @v p 'print'
-@v r 'range'
+@v g 'range'
 @v F 'Fizz'
 @v B 'Buzz'
 @v Z 'FizzBuzz'
 @v k 'i'
 $
-f k n r(1, 101):
+f k n g(1, 101):
  i k % 15 == 0:
   p("Z")
  e:
