@@ -1,0 +1,106 @@
+@v s 'sys'
+@v a 'ast'
+@v p 'print'
+@v O 'open'
+@v R 'read'
+@v I 'isinstance'
+@v E 'exit'
+@v w 'write'
+@v S 'stderr'
+@v f 'format'
+@v M 'Module'
+@v X 'Expr'
+@v C 'Call'
+@v K 'Constant'
+@v B 'BinOp'
+@v A 'Add'
+@v U 'Sub'
+@v L 'Mult'
+@v D 'Div'
+@v n 'node'
+@v v 'value'
+@v l 'left'
+@v r 'right'
+@v o 'op'
+@v g 'args'
+@v b 'body'
+@v y 'style'
+@v i 'if'
+@v e 'else'
+$
+m s
+m a
+
+# ---------------------------------------------------------
+# ASTノードを再帰的に訪問してIRを出力する関数
+# ---------------------------------------------------------
+d V(n):
+ # --- 式 (Expression) ---
+ i I(n, a.X):
+  V(n.v)
+
+ # --- 定数 (Constant: 数字や文字列) ---
+ i I(n, a.K):
+  # PUSH <値>
+  p("PUSH {}".f(n.v))
+
+ # --- 二項演算 (BinOp: + - * /) ---
+ i I(n, a.B):
+  # 1. 左辺を処理 (PUSHされる)
+  V(n.l)
+  # 2. 右辺を処理 (PUSHされる)
+  V(n.r)
+  # 3. 演算命令
+  i I(n.o, a.A):
+   p("ADD")
+  i I(n.o, a.U):
+   p("SUB")
+  i I(n.o, a.L):
+   p("MUL")
+  i I(n.o, a.D):
+   p("DIV")
+
+ # --- 関数呼び出し (Call) ---
+ i I(n, a.C):
+  # 引数を順番に処理 (スタックに積む)
+  f x n n.g:
+   V(x)
+  
+  # 関数名を確認 (今は print のみ対応)
+  # ast.Name ノードの id を見る必要があるが、
+  # 簡易的に func.id を参照する (py1では属性アクセスはそのまま通る)
+  i n.func.id == "print":
+   p("PRINT")
+
+ # --- モジュール (Module: 全体のルート) ---
+ i I(n, a.M):
+  f x n n.b:
+   V(x)
+
+# ---------------------------------------------------------
+# メイン処理
+# ---------------------------------------------------------
+i len(s.argv) < 2:
+ s.S.w("Usage: python compiler_ir.py <source_file>\n")
+ s.E(1)
+
+# ファイル読み込み
+# @v などの定義行は ast.parse が理解できないため、
+# '$' 以降（本文）だけを取り出して解析する
+txt = O(s.argv[1], "r", encoding="utf-8").R()
+lines = txt.splitlines()
+body_txt = ""
+is_body = False
+
+f line n lines:
+ i is_body:
+  body_txt = body_txt + line + "\n"
+ e:
+  i line.strip() == "$":
+   is_body = True
+
+# AST解析
+tree = a.parse(body_txt)
+
+# コンパイル開始 (IR出力)
+V(tree)
