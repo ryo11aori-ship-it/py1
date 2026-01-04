@@ -1,30 +1,13 @@
-@v 表 'print'
-@v 範 'range'
-@v も 'import'
-@v 数 'math'
-@v 円 'pi'
-@v 根 'sqrt'
-@v 和 'sum'
-@v 日 '日本語もOK'
 @v s 'sys'
 @v 出 'stdout'
-@v 構 'reconfigure'
-@v 号 'encoding'
+@v バ 'buffer'
+@v 書 'write'
+@v コ 'encode'
 @v 符 'utf-8'
+@v 日 '日本語もOK\n'
 $
-も 数
-も s
+m s
 
-# 【重要】Pythonの出力エンコーディングを強制的にUTF-8に設定
-# sys.stdout.reconfigure(encoding='utf-8')
-s.出.構(号="符")
-
-# 数学関数のテスト
-表(数.根(数.円))
-
-# 漢字でループと集計
-表(和(範(10)))
-
-# 日本語テスト
-# これで必ず「日本語もOK」と表示される
-表("日")
+# sys.stdout.buffer.write("日本語...".encode("utf-8"))
+# Pythonのテキスト出力層をバイパスし、生のUTF-8バイトを叩き込む
+s.出.バ.書(日.コ("符"))
