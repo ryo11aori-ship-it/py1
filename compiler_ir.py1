@@ -97,7 +97,7 @@
 @v 頭 'H'
 @v 鍵 'k'
 @v 値 'v'
-@v 真 'R'
+@v 真 'real'
 @v 仮 'A'
 @v 木 'T'
 @v 巡 'V'
@@ -124,7 +124,8 @@ m 星
 # Label Generator
 d 新():
  番[0] = 番[0] + 1
- R "L" + 塗(番[0])
+ # 【修正】R(raise) ではなく r(return) を使う
+ r "L" + 塗(番[0])
 
 d 巡(節):
  # Values
