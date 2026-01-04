@@ -1,47 +1,62 @@
 # spec_consts.py
 # Pythonの予約語とpy1の1文字トークンの固定マッピング
-# ユーザー定義(@v)では、この表にある文字を使用できません。
+# keyword.kwlist (Python 3.10+) を参考に網羅
 
 RESERVED_MAP = {
-    # --- 小文字 (頻出キーワード) ---
-    'd': 'def',
-    'r': 'return',
+    # --- 制御構文 ---
     'i': 'if',
-    'e': 'else',
+    'e': 'else',  # elif は else if で代用想定だが、定義するならEなどで
     'f': 'for',
     'w': 'while',
-    'n': 'in',
-    'm': 'import',
-    'o': 'from',
-    'c': 'class',
     'b': 'break',
+    'C': 'continue', # cはclassで使う
+    'P': 'pass',     # pはprint用
+    'r': 'return',
+    'Y': 'yield',
+    
+    # --- 定義・スコープ ---
+    'd': 'def',
+    'c': 'class',
+    'G': 'global',
+    'Q': 'nonlocal',
+    'D': 'del',
+    
+    # --- 例外処理 ---
     't': 'try',
     'x': 'except',
-    'l': 'lambda',
-    'a': 'and',
-    
-    # --- 大文字 (衝突回避または2軍キーワード) ---
-    'P': 'pass',      # p はユーザー(print等)のために空ける
-    'O': 'or',        # o は from で使用済み
-    'N': 'not',       # n は in で使用済み
-    'I': 'is',        # i は if で使用済み
-    'A': 'as',        # a は and で使用済み
-    'W': 'with',      # w は while で使用済み
-    'Y': 'yield',
-    'G': 'global',
-    'T': 'True',
-    'F': 'False',
-    'Z': 'None',      # N は not で使用済み
+    'L': 'finally', # Last
+    'R': 'raise',
     'S': 'assert',
+    
+    # --- 非同期 ---
     'U': 'async',
     'V': 'await',
     
-    # --- 追加 (完全性のため) ---
-    'D': 'del',
-    'R': 'raise',
-    'C': 'continue',
-    'L': 'finally',   # Last
-    'Q': 'nonlocal',  # 他の文字が埋まっているためQ
+    # --- インポート ---
+    'm': 'import',
+    'o': 'from', # Origin
+    'A': 'as',
+    
+    # --- 論理・比較・演算 ---
+    'a': 'and',
+    'O': 'or',
+    'N': 'not',
+    'I': 'is',
+    'n': 'in',
+    'l': 'lambda',
+    
+    # --- 定数 ---
+    'T': 'True',
+    'F': 'False',
+    'Z': 'None', # Zero/Null
+    
+    # --- パターンマッチ (Soft keywords) ---
+    # 文脈依存だが、py1では予約語として扱う方が安全
+    'M': 'match',
+    'K': 'case',
+    
+    # --- その他 ---
+    'W': 'with',
 }
 
 RESERVED_CHARS = set(RESERVED_MAP.keys())
