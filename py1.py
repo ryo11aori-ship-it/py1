@@ -37,7 +37,6 @@ def parse_definitions(source_text):
                 
                 # エスケープシーケンスを解釈
                 try:
-                    value = raw_value.encode('utf-8').decode('unicode_escape')
                 except Exception:
                     value = raw_value
 
