@@ -43,6 +43,7 @@
 @v 改 '\n'
 @v 長 'Long name: {}'
 @v 未 'Undefined: {}'
+@v 引 '"'
 @v 複 'Use double quotes'
 @v 単 'String len != 1'
 @v 空 ''
