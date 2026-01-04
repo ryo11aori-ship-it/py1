@@ -28,4 +28,5 @@ jobs:
         python output.py
         python py1.py fizzbuzz.py1 > output_fb.py
         python output_fb.py
+        python analyze_deps.py
 
