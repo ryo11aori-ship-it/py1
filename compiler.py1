@@ -27,6 +27,26 @@
 @v 列 'STRING'
 @v 去 'exit'
 @v 誤 'stderr'
+@v 書 'write'
+@v 形 'format'
+@v モ 'r'
+@v 符 'utf-8'
+@v 使 'Usage: python py1.py <source_file>'
+@v 則 '^@v\s+(.)\s+\x27([^\x27]*)\x27\s*$'
+@v エ 'Error: [Line {}] {}\n'
+@v 予 'Reserved: {}'
+@v 済 'Redefined: {}'
+@v メ 'Invalid def'
+@v ド '$'
+@v シ '#'
+@v 無 'No $ separator'
+@v 改 '\n'
+@v 長 'Long name: {}'
+@v 未 'Undefined: {}'
+@v 引 '"'
+@v 複 'Use double quotes'
+@v 単 'String len != 1'
+@v 空 ''
 $
 m s
 m K
@@ -35,32 +55,33 @@ m X
 o 規 m 図, 禁
 
 d O(a, l):
- s.誤.y(f"Error: [Line {l}] {a}\n")
+ 銭 = "エ".形(l, a)
+ s.誤.書(銭)
  s.去(1)
 
 i len(s.v) < 2:
- p("Usage: python py1.py <source_file>")
+ p("使")
  s.去(1)
 
 P = s.v[1]
-T = J(P, "r", E="utf-8").u()
+T = J(P, "モ", E="符").u()
 L = T.h()
 
 Q = {}
 W = []
 F = 0
-A = X.組(r"^@v\s+(.)\s+'([^']*)'\s*$")
+A = X.組("則")
 
 f N n g(len(L)):
  I = L[N].z()
  i F == 0:
-  i I == "$":
+  i I == "ド":
    F = 1
-   P # continue
+   P
   
   i not I:
    P
-  i I.始("#"):
+  i I.始("シ"):
    P
   
   Z = A.合(I)
@@ -68,20 +89,20 @@ f N n g(len(L)):
    K_ = Z.g(1)
    V = Z.g(2)
    i K_ n 禁:
-    O(f"Reserved: {K_}", N+1)
+    O("予".形(K_), N+1)
    i K_ n Q:
-    O(f"Redefined: {K_}", N+1)
+    O("済".形(K_), N+1)
    Q[K_] = V
   e:
-   O("Invalid def", N+1)
+   O("メ", N+1)
  e:
   W.append(L[N])
 
 i F == 0:
- O("No $ separator", 0)
+ O("無", 0)
 
-B_ = "\n".j(W)
-S_ = M.B(B_.E("utf-8")).readline
+B_ = "改".j(W)
+S_ = M.B(B_.E("符")).readline
 Ts = K.K(S_)
 Ns = []
 
@@ -94,7 +115,7 @@ f t n Ts:
 
  i Y_ == K.j:
   i len(S_) > 1:
-   O(f"Long name: {S_}", st[0])
+   O("長".形(S_), st[0])
   
   i S_ n 図:
    Ns.append((Y_, 図[S_]))
@@ -102,23 +123,23 @@ f t n Ts:
    i S_ n Q:
     Ns.append((Y_, Q[S_]))
    e:
-    O(f"Undefined: {S_}", st[0])
+    O("未".形(S_), st[0])
  
  e:
   i Y_ == K.列:
-   i not (S_.始('"') a S_.終('"')):
-    O("Use double quotes", st[0])
+   i not (S_.始("引") a S_.終("引")):
+    O("複", st[0])
    
    in_ = S_[1:-1]
    i len(in_) != 1:
-    O("String len != 1", st[0])
+    O("単", st[0])
    
    i in_ n Q:
-    Ns.append((Y_, f'"{Q[in_]}"'))
+    Ns.append((Y_, "引" + Q[in_] + "引"))
    e:
     Ns.append((Y_, S_))
   e:
    Ns.append((t.k, t.字))
 
-res = K.逆(Ns).解("utf-8")
+res = K.逆(Ns).解("符")
 p(res)
