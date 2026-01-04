@@ -3,8 +3,9 @@ name: Test py1 Compiler & Self-Hosting
 on: [push, pull_request]
 
 env:
-  # これさえあれば、Pythonは必ずUTF-8で出力する
+  # 文字化け対策の鉄板設定
   PYTHONIOENCODING: utf-8
+  LANG: C.UTF-8
 
 jobs:
   build:
@@ -54,9 +55,7 @@ jobs:
     - name: 5. Unicode Test
       run: |
         echo "--- Testing Unicode with Gen3 Compiler ---"
-        # コンパイル
         python compiler_gen3.py unicode_test.py1 > output_uni.py
         
-        # 実行
         echo "--- Running Unicode Output ---"
         python output_uni.py
