@@ -26,3 +26,6 @@ jobs:
         
         # 生成されたコードを実行
         python output.py
+        python py1.py fizzbuzz.py1 > output_fb.py
+        python output_fb.py
+
