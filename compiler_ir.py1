@@ -38,26 +38,25 @@
 @v 類 'args'
 @v 体 'body'
 
-# IR命令
-@v 積 'PUSH {}'
-@v 加 'ADD'
-@v 差 'SUB'
-@v 乗 'MUL'
-@v 割 'DIV'
-@v 印 'PRINT'
-@v 刷 'print'
+# IR命令 (【修正】ダブルクォートで囲む！)
+@v 積 '"PUSH {}"'
+@v 加 '"ADD"'
+@v 差 '"SUB"'
+@v 乗 '"MUL"'
+@v 割 '"DIV"'
+@v 印 '"PRINT"'
+@v 刷 '"print"'
 
-# Misc
-@v 改 '\n'
-@v 符 'utf-8'
-@v 号 'encoding'
-@v モ 'r'
-@v メ 'Usage: python compiler_ir.py <source_file>\n'
-@v ド '$'
-@v 冠 '@v'
-# 【修正】展開結果が "'" になるよう、ダブルクォートで囲んで定義
+# Misc (【修正】ここもダブルクォートで囲む！)
+@v 改 '"\n"'
+@v 符 '"utf-8"'
+@v 号 '"encoding"'
+@v モ '"r"'
+@v メ '"Usage: python compiler_ir.py <source_file>\n"'
+@v ド '"$"'
+@v 冠 '"@v"'
 @v 点 '"\x27"'
-# 【変更】"文字" は却下。"鬱" (str) を採用
+# str は関数(型)なのでクォートなし
 @v 鬱 'str'
 
 # 変数宣言
@@ -116,7 +115,7 @@ d 巡(節):
   f 項 n 節.類:
    巡(項)
   
-  # 空文字生成
+  # 空文字
   真 = 鬱()
   i 確(節.関, 星.名):
    仮 = 節.関.識
