@@ -7,7 +7,7 @@
 @v 図 'RESERVED_MAP'
 @v 禁 'RESERVED_CHARS'
 @v p 'print'
-@v O 'open'
+@v 開 'open'
 @v u 'read'
 @v v 'argv'
 @v h 'splitlines'
@@ -86,7 +86,6 @@
 @v 尾 'endswith'
 @v 報 'TokenInfo'
 @v 逃 'unicode_escape'
-@v F 'False'
 @v ダ 'dumps'
 $
 m s
@@ -106,7 +105,7 @@ i 寸(s.v) < 2:
  s.去(1)
 
 道 = s.v[1]
-文 = O(道, "モ", 号="符").u()
+文 = 開(道, "モ", 号="符").u()
 本 = 文.h()
 
 辞 = {}
