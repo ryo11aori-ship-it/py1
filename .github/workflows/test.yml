@@ -3,9 +3,8 @@ name: Test py1 Compiler & Self-Hosting
 on: [push, pull_request]
 
 env:
-  # 【決定打】Pythonを強制的にUTF-8モードで動作させる
-  PYTHONUTF8: 1
   PYTHONIOENCODING: utf-8
+  # ここではまだ設定せず、step内で定義したロケールを使う
 
 jobs:
   build:
@@ -19,48 +18,62 @@ jobs:
       with:
         python-version: '3.10'
 
-    # 環境チェック: まず普通のPythonで日本語が出るか確認（これで出れば環境はOK）
-    - name: 0. Environment Check
+    # 【重要】日本語ロケールを強制生成・設定する
+    - name: Setup Locale
       run: |
-        python -c "print('Environment Check: 日本語OK')"
+        sudo locale-gen ja_JP.UTF-8
+        sudo update-locale LANG=ja_JP.UTF-8
 
-    # 1. ブートストラップ（世代1 -> 世代2）
-    - name: 1. Bootstrap Generation 1 (py1.py -> compiler_gen2.py)
+    # 1. ブートストラップ
+    - name: 1. Bootstrap Generation 1
+      env:
+        LANG: ja_JP.UTF-8
+        LC_ALL: ja_JP.UTF-8
       run: |
-        echo "--- Bootstrapping: py1.py -> compiler.py1 -> compiler_gen2.py ---"
+        echo "--- Bootstrapping ---"
         python py1.py compiler.py1 > compiler_gen2.py
         head -n 5 compiler_gen2.py
 
-    # 2. セルフホスト（世代2 -> 世代3）
-    - name: 2. Bootstrap Generation 2 (compiler_gen2.py -> compiler_gen3.py)
+    # 2. セルフホスト
+    - name: 2. Bootstrap Generation 2
+      env:
+        LANG: ja_JP.UTF-8
+        LC_ALL: ja_JP.UTF-8
       run: |
-        echo "--- Self-Hosting: compiler_gen2.py -> compiler.py1 -> compiler_gen3.py ---"
+        echo "--- Self-Hosting ---"
         python compiler_gen2.py compiler.py1 > compiler_gen3.py
 
     # 3. 冪等性テスト
-    - name: 3. Verify Idempotency (Gen2 vs Gen3)
+    - name: 3. Verify Idempotency
       run: |
-        echo "--- Comparing Generation 2 and Generation 3 Code ---"
+        echo "--- Comparing Gen2 and Gen3 ---"
         if diff -q compiler_gen2.py compiler_gen3.py; then
-          echo "SUCCESS: Compiler is idempotent and stable."
+          echo "SUCCESS: Compiler is idempotent."
         else
-          echo "FAILURE: Compiler output differs between generations."
+          echo "FAILURE: Diff detected."
           diff compiler_gen2.py compiler_gen3.py
           exit 1
         fi
 
     # 4. FizzBuzz
     - name: 4. Application Test (FizzBuzz)
+      env:
+        LANG: ja_JP.UTF-8
+        LC_ALL: ja_JP.UTF-8
       run: |
-        echo "--- Testing FizzBuzz with Gen3 Compiler ---"
+        echo "--- Testing FizzBuzz ---"
         python compiler_gen3.py fizzbuzz.py1 > output_fb.py
         python output_fb.py
 
     # 5. Unicodeテスト
     - name: 5. Unicode Test
+      env:
+        LANG: ja_JP.UTF-8
+        LC_ALL: ja_JP.UTF-8
       run: |
-        echo "--- Testing Unicode with Gen3 Compiler ---"
-        python compiler_gen3.py unicode_test.py1 > output_uni.py
+        echo "--- Testing Unicode ---"
+        # 環境確認: echoコマンドで日本語が出るかチェック（これで化けるならGitHub自体の問題）
+        echo "Environment Check: 日本語テスト開始"
         
-        echo "--- Running Unicode Output ---"
+        python compiler_gen3.py unicode_test.py1 > output_uni.py
         python output_uni.py
