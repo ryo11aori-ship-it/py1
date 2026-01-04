@@ -1,0 +1,124 @@
+@v s 'sys'
+@v K 'tokenize'
+@v M 'io'
+@v X 're'
+@v C 'spec_consts'
+@v R 'RESERVED_MAP'
+@v H 'RESERVED_CHARS'
+@v p 'print'
+@v J 'open'
+@v u 'read'
+@v v 'argv'
+@v h 'splitlines'
+@v z 'strip'
+@v B 'BytesIO'
+@v E 'encode'
+@v D 'decode'
+@v U 'untokenize'
+@v g 'group'
+@v c 'compile'
+@v m 'match'
+@v k 'type'
+@v S 'string'
+@v b 'start'
+@v q 'end'
+@v y 'line'
+@v j 'NAME'
+@v G 'STRING'
+@v x 'exit'
+@v Y 'stderr'
+$
+m s
+m K
+m M
+m X
+o C m R, H
+
+d O(a, l):
+ s.Y.y(f"Error: [Line {l}] {a}\n")
+ s.x(1)
+
+i len(s.v) < 2:
+ p("Usage: python py1.py <source_file>")
+ s.x(1)
+
+P = s.v[1]
+T = J(P, "r", E="utf-8").u()
+L = T.h()
+
+Q = {}
+W = []
+F = 0
+A = X.c(r"^@v\s+([a-zA-Z_])\s+'([^']*)'\s*$")
+
+f N n g(len(L)):
+ I = L[N].z()
+ i F == 0:
+  i I == "$":
+   F = 1
+   P # continue equivalent
+  
+  i not I:
+   P
+  i I.b("#"):
+   P
+  
+  Z = A.m(I)
+  i Z:
+   K_ = Z.g(1)
+   V = Z.g(2)
+   i K_ n H:
+    O(f"Reserved: {K_}", N+1)
+   i K_ n Q:
+    O(f"Redefined: {K_}", N+1)
+   Q[K_] = V
+  e:
+   O("Invalid def", N+1)
+ e:
+  W.append(L[N])
+
+i F == 0:
+ O("No $ separator", 0)
+
+B_ = "\n".j(W)
+S_ = M.B(B_.E("utf-8")).readline
+Ts = K.K(S_)
+Ns = []
+
+f t n Ts:
+ Y_ = t.k
+ S_ = t.S
+ st = t.b
+ en = t.q
+ ln = t.y
+
+ i Y_ == K.j:
+  i len(S_) > 1:
+   O(f"Long name: {S_}", st[0])
+  
+  i S_ n R:
+   Ns.append((Y_, R[S_]))
+  e:
+   i S_ n Q:
+    Ns.append((Y_, Q[S_]))
+   e:
+    O(f"Undefined: {S_}", st[0])
+ 
+ e:
+  i Y_ == K.G:
+   i not (S_.b('"') a S_.q('"')):
+    O("Use double quotes", st[0])
+   
+   in_ = S_[1:-1]
+   i len(in_) != 1:
+    O("String len != 1", st[0])
+   
+   i in_ n Q:
+    Ns.append((Y_, f'"{Q[in_]}"'))
+   e:
+    Ns.append((Y_, S_))
+  e:
+   Ns.append((t.k, t.S))
+
+res = K.U(Ns).D("utf-8")
+p(res)
