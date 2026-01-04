@@ -87,6 +87,8 @@
 @v 報 'TokenInfo'
 @v 逃 'unicode_escape'
 @v ダ 'dumps'
+@v 保 'ensure_ascii'
+@v F 'False'
 @v 害 'err_flag'
 $
 m s
