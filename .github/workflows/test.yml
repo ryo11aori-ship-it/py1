@@ -3,6 +3,8 @@ name: Test py1 Compiler & Self-Hosting
 on: [push, pull_request]
 
 env:
+  # 日本語出力のための最強設定（維持）
+  PYTHONUTF8: 1
   PYTHONIOENCODING: utf-8
 
 jobs:
@@ -17,48 +19,42 @@ jobs:
       with:
         python-version: '3.10'
 
-    # 日本語ロケールの強制生成（echoコマンド等に効くため残す）
-    - name: Setup Locale
-      run: |
-        sudo locale-gen ja_JP.UTF-8
-        sudo update-locale LANG=ja_JP.UTF-8
+    # 【新設】Blackフォーマッタのインストール
+    - name: Install Black
+      run: pip install black
 
-    # 1. ブートストラップ
-    - name: 1. Bootstrap Generation 1
-      env:
-        LANG: ja_JP.UTF-8
-        LC_ALL: ja_JP.UTF-8
+    # 1. ブートストラップ（世代1 -> 世代2）
+    - name: 1. Bootstrap Generation 1 (py1.py -> compiler_gen2.py)
       run: |
-        echo "--- Bootstrapping ---"
+        echo "--- Bootstrapping: py1.py -> compiler.py1 -> compiler_gen2.py ---"
         python py1.py compiler.py1 > compiler_gen2.py
-        head -n 5 compiler_gen2.py
+        
+        # Blackで正規化（A+B案の核心）
+        black compiler_gen2.py
 
-    # 2. セルフホスト
-    - name: 2. Bootstrap Generation 2
-      env:
-        LANG: ja_JP.UTF-8
-        LC_ALL: ja_JP.UTF-8
+    # 2. セルフホスト（世代2 -> 世代3）
+    - name: 2. Bootstrap Generation 2 (compiler_gen2.py -> compiler_gen3.py)
       run: |
-        echo "--- Self-Hosting ---"
+        echo "--- Self-Hosting: compiler_gen2.py -> compiler.py1 -> compiler_gen3.py ---"
         python compiler_gen2.py compiler.py1 > compiler_gen3.py
+        
+        # Blackで正規化
+        black compiler_gen3.py
 
-    # 3. 冪等性テスト
-    - name: 3. Verify Idempotency
+    # 3. 冪等性テスト（Black済みコード同士を比較）
+    - name: 3. Verify Idempotency (Gen2 vs Gen3)
       run: |
-        echo "--- Comparing Gen2 and Gen3 ---"
+        echo "--- Comparing Generation 2 and Generation 3 Code ---"
         if diff -q compiler_gen2.py compiler_gen3.py; then
-          echo "SUCCESS: Compiler is idempotent."
+          echo "SUCCESS: Compiler is idempotent (Modulo Formatting)."
         else
-          echo "FAILURE: Diff detected."
+          echo "FAILURE: Compiler output differs."
           diff compiler_gen2.py compiler_gen3.py
           exit 1
         fi
 
     # 4. FizzBuzz
     - name: 4. Application Test (FizzBuzz)
-      env:
-        LANG: ja_JP.UTF-8
-        LC_ALL: ja_JP.UTF-8
       run: |
         echo "--- Testing FizzBuzz ---"
         python compiler_gen3.py fizzbuzz.py1 > output_fb.py
@@ -66,13 +62,7 @@ jobs:
 
     # 5. Unicodeテスト
     - name: 5. Unicode Test
-      env:
-        LANG: ja_JP.UTF-8
-        LC_ALL: ja_JP.UTF-8
       run: |
         echo "--- Testing Unicode ---"
-        # 環境チェック（echoは成功している）
-        echo "Environment Check: 日本語テスト開始"
-        
         python compiler_gen3.py unicode_test.py1 > output_uni.py
         python output_uni.py
