@@ -15,7 +15,7 @@ def parse_definitions(source_text):
     body_lines = []
     is_body = False
     
-    # 任意の1文字(.)を許可。ただし改行は除く
+    # 【変更点】 [a-zA-Z_] を (.) に変更し、あらゆるUnicode1文字を許可
     def_pattern = re.compile(r"^@v\s+(.)\s+'([^']*)'\s*$")
 
     for i, line in enumerate(lines):
@@ -26,12 +26,8 @@ def parse_definitions(source_text):
             if stripped == '$':
                 is_body = True
                 continue
-            
-            if not stripped:
-                continue
-            
-            if stripped.startswith('#'):
-                continue
+            if not stripped: continue
+            if stripped.startswith('#'): continue
 
             match = def_pattern.match(stripped)
             if match:
@@ -40,13 +36,11 @@ def parse_definitions(source_text):
 
                 if char_key in RESERVED_CHARS:
                     error(f"Character '{char_key}' is reserved by system.", line_num)
-                
                 if char_key in symbol_table:
                     error(f"Redefinition of '{char_key}'.", line_num)
-
                 symbol_table[char_key] = value
             else:
-                error("Invalid syntax in definition phase. Expected @v definition or $.", line_num)
+                error("Invalid syntax in definition phase.", line_num)
         else:
             body_lines.append(line)
 
@@ -62,7 +56,6 @@ def transpile(source_path):
     symbol_table, body_text = parse_definitions(source_text)
     
     tokens = list(tokenize.tokenize(io.BytesIO(body_text.encode('utf-8')).readline))
-    
     new_tokens = []
     
     for tok in tokens:
@@ -74,44 +67,38 @@ def transpile(source_path):
 
         if token_type == tokenize.NAME:
             if len(token_string) > 1:
-                error(f"Invalid identifier '{token_string}'. Only 1-char identifiers allowed in body.", start[0])
+                error(f"Invalid identifier '{token_string}'. Only 1-char identifiers allowed.", start[0])
 
             if token_string in RESERVED_MAP:
-                new_val = RESERVED_MAP[token_string]
-                new_tokens.append((token_type, new_val, start, end, line_text))
+                new_tokens.append((token_type, RESERVED_MAP[token_string], start, end, line_text))
             elif token_string in symbol_table:
-                new_val = symbol_table[token_string]
-                new_tokens.append((token_type, new_val, start, end, line_text))
+                new_tokens.append((token_type, symbol_table[token_string], start, end, line_text))
             else:
                 error(f"Undefined identifier '{token_string}'.", start[0])
 
         elif token_type == tokenize.STRING:
             if not (token_string.startswith('"') and token_string.endswith('"')):
                 error("Only double quotes allowed for strings in body.", start[0])
-            
             inner = token_string[1:-1]
             if len(inner) != 1:
-                error(f"String literal must contain exactly 1 char. Found: '{inner}'", start[0])
+                # 文字列中身が1文字でない場合のエラー処理
+                # ここでは簡易的にそのまま通すかエラーにするかだが、仕様通りエラーにするなら:
+                error(f"String literal must be 1 char. Found: '{inner}'", start[0])
             
             if inner in symbol_table:
-                expanded_content = symbol_table[inner]
-                new_val = f'"{expanded_content}"'
-                new_tokens.append((token_type, new_val, start, end, line_text))
+                new_tokens.append((token_type, f'"{symbol_table[inner]}"', start, end, line_text))
             else:
                 new_tokens.append((tokenize.STRING, token_string, start, end, line_text))
-
         else:
             new_tokens.append(tok)
 
     result_code = tokenize.untokenize(new_tokens)
-    # 修正箇所: バイト列を文字列にデコードして返す
     return result_code.decode('utf-8')
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python py1.py <source_file>")
         sys.exit(1)
-    
     try:
         compiled_python = transpile(sys.argv[1])
         print(compiled_python)
