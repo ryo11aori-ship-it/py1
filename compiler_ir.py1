@@ -46,8 +46,28 @@
 @v 読モード 'r'
 @v メ 'Usage: python compiler_ir.py <source_file>\n'
 @v ド '$'
-# 正規表現（空白は[ \t]で表現）
+# 正規表現
 @v 則 '^@v[ \t]+(.)[ \t]+\x27([^\x27]*)\x27[ \t]*$'
+
+# 【追加】ローカル変数の宣言 (値はPythonでの変数名になる)
+@v 辞 'D'
+@v 節 'node'
+@v 項 'item'
+@v 道 'path'
+@v 文 'text'
+@v 列 'lines'
+@v 行 'line'
+@v 素 'sline'
+@v 身 'body'
+@v 旗 'flag'
+@v 型 'pattern'
+@v 当 'm'
+@v 鍵 'k'
+@v 値 'v'
+@v 真 'real'
+@v 仮 'alias'
+@v 木 'tree'
+@v 巡 'visit'
 
 $
 m s
