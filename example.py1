@@ -1,0 +1,6 @@
+@v p 'print'
+@v H 'Hello, py1 World!'
+@v s 'sum'
+$
+# This is a comment inside body
+p("H")
