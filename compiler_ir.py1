@@ -43,6 +43,9 @@
 @v 等 'Eq'
 @v 少 'Lt'
 @v 以 'LtE'
+@v 属 'Attribute'
+@v 字 'Subscript'
+@v 切 'Slice'
 
 # AST Attributes
 @v 価 'value'
@@ -53,6 +56,8 @@
 @v 識 'id'
 @v 類 'args'
 @v 体 'body'
+@v 属性 'attr'
+@v ス 'slice'
 
 # IR Instructions
 @v 積 '"PUSH {}"'
@@ -70,6 +75,8 @@
 @v 無 '"JZERO {}"'
 @v 同 '"EQ"'
 @v 負 '"LT"'
+@v 喚 '"CALL {}"'
+@v 得 '"GET"'
 
 # Misc
 @v 改 '"\\n"'
@@ -80,7 +87,7 @@
 @v ド '"$"'
 @v 冠 '"@v"'
 @v 鬱 'str'
-@v 字 'chr'
+@v 単 'chr'
 
 # Vars
 @v 辞 'D'
@@ -118,13 +125,12 @@ m 星
 # Global
 辞 = {}
 番 = [0]
-点 = 字(39)
-間 = 字(32)
+点 = 単(39)
+間 = 単(32)
 
 # Label Generator
 d 新():
  番[0] = 番[0] + 1
- # 【修正】R(raise) ではなく r(return) を使う
  r "L" + 塗(番[0])
 
 d 巡(節):
@@ -168,60 +174,64 @@ d 巡(節):
   i 確(参, 星.以):
    表(負)
 
+ # Subscript (L[0], D[k])
+ i 確(節, 星.字):
+  巡(節.価)
+  巡(節.ス)
+  表(得)
+
  # Control Flow
  i 確(節, 星.も):
-  # If
   壱 = 新()
   弐 = 新()
-  
   巡(節.条)
   表(無.形(壱))
-  
   f 項 n 節.体:
    巡(項)
   表(飛.形(弐))
-  
   表(札.形(壱))
   f 項 n 節.他:
    巡(項)
-  
   表(札.形(弐))
 
  i 確(節, 星.輪):
-  # While
   壱 = 新()
   弐 = 新()
-  
   表(札.形(壱))
-  
   巡(節.条)
   表(無.形(弐))
-  
   f 項 n 節.体:
    巡(項)
-  
   表(飛.形(壱))
-  
   表(札.形(弐))
 
- # Function Call
+ # Function/Method Call
  i 確(節, 星.式):
   巡(節.価)
 
  i 確(節, 星.呼):
+  # Args
   f 項 n 節.類:
    巡(項)
   
-  真 = 鬱()
+  # Method call: obj.method(args)
+  i 確(節.関, 星.属):
+   巡(節.関.価) # Push object
+   # メソッド名を引数に CALL
+   表(喚.形(節.関.属性))
+
+  # Function call: func(args)
   i 確(節.関, 星.名):
    仮 = 節.関.識
+   真 = 仮
    i 仮 n 辞:
     真 = 辞[仮]
+   
+   i 真 == 刷:
+    表(印)
    e:
-    真 = 仮
-  
-  i 真 == 刷:
-   表(印)
+    # 一般関数呼び出し (例: len(), int())
+    表(喚.形(真))
 
  # Module
  i 確(節, 星.根):
