@@ -14,37 +14,39 @@ void panic(const char *msg) { fprintf(stderr, "Panic: %s\n", msg); exit(1); }
 // --- Type System ---
 typedef enum { OBJ_INT, OBJ_STR, OBJ_LIST, OBJ_DICT, OBJ_NONE } ObjType;
 
-struct Object;
-typedef struct Object Object;
+// Forward declarations
+struct List;
+struct Dict;
 
-// List Implementation (Array)
-typedef struct {
+// Object Definition (Moved to top)
+typedef struct Object {
+    ObjType type;
+    union {
+        int i;
+        char *s;
+        struct List *l;
+        struct Dict *d;
+    } v;
+} Object;
+
+// List Implementation
+typedef struct List {
     Object *items;
     int count;
     int capacity;
 } List;
 
-// Dict Implementation (Key-Value Pair Array)
+// Dict Implementation
 typedef struct {
     char *key;
-    Object val;
+    Object val; // Now Object is defined, so this is valid
 } KVPair;
 
-typedef struct {
+typedef struct Dict {
     KVPair *pairs;
     int count;
     int capacity;
 } Dict;
-
-struct Object {
-    ObjType type;
-    union {
-        int i;
-        char *s;
-        List *l;
-        Dict *d;
-    } v;
-};
 
 // --- Memory Constructors ---
 Object make_int(int v) { Object o; o.type=OBJ_INT; o.v.i=v; return o; }
@@ -95,13 +97,12 @@ Object peek() { if(sp<=0) panic("Stack underflow"); return stack[sp-1]; }
 // --- Variable Ops ---
 Object get_var(char *name) {
     for(int i=0; i<var_count; i++) if(strcmp(vars[i].name,name)==0) return vars[i].val;
-    // Default factories for implicit globals (like D={})
     if(strcmp(name, "D")==0) { 
         Object d = make_dict(); 
         if(var_count<MAX_VARS) { strcpy(vars[var_count].name,name); vars[var_count].val=d; var_count++; }
         return d;
     }
-    return make_none(); // Undefined
+    return make_none();
 }
 
 void set_var(char *name, Object val) {
@@ -134,7 +135,7 @@ void dict_set(Dict *d, char *key, Object val) {
 
 Object dict_get(Dict *d, char *key) {
     for(int i=0; i<d->count; i++) if(strcmp(d->pairs[i].key, key)==0) return d->pairs[i].val;
-    return make_str(key); // Hack: for simple ID mapping, return ID itself if not found
+    return make_str(key);
 }
 
 // --- Helpers ---
@@ -144,17 +145,13 @@ int is_number(char *s) {
 }
 int find_label(char *name) {
     for(int i=0; i<label_count; i++) if(strcmp(labels[i].name,name)==0) return labels[i].line_num;
-    return -1; // Panic?
+    return -1;
 }
 
 // --- Built-in Methods ---
 void call_method(char *method) {
-    // Stack top is Obj, or Args... then Obj. 
-    // Simplified calling convention:
-    // Some methods take args from stack.
-    
     if (strcmp(method, "splitlines") == 0) {
-        Object o = pop(); // String
+        Object o = pop();
         if(o.type!=OBJ_STR) panic("splitlines on non-string");
         Object lst = make_list();
         char *dup = strdup(o.v.s);
@@ -163,12 +160,10 @@ void call_method(char *method) {
         push(lst);
     }
     else if (strcmp(method, "strip") == 0) {
-        Object arg = pop(); // arg to strip (usually chars) - optional
+        Object arg = pop();
         Object o;
         if (arg.type == OBJ_STR) { 
-             // Argument passed (e.g. strip("'"))
-             o = pop(); // The target string
-             // Simple strip implementation (only trimming exact char from ends)
+             o = pop();
              char *s = o.v.s;
              char remove = arg.v.s[0];
              if(s[0] == remove) s++;
@@ -176,16 +171,7 @@ void call_method(char *method) {
              if(len>0 && s[len-1] == remove) s[len-1] = 0;
              push(make_str(s));
         } else {
-             // No arg passed (actually arg is the object itself if we assume 0 args?
-             // Calling convention issue. Assuming 0 args for now if 'strip'
-             // Actually stack is [Obj] -> Call strip
-             // But wait, our compiler PUSHes args then Obj.
-             // If strip() has 0 args, Stack top is Obj.
-             // If strip("'") has 1 arg, Stack top is Obj, then arg? No.
-             // Compiler: 巡(Args)... then 巡(Obj).
-             // Stack: [Arg, Obj]. Top is Obj.
-             o = arg; // It was the object
-             // Simple whitespace strip
+             o = arg;
              char *start = o.v.s;
              while(isspace(*start)) start++;
              char *end = start + strlen(start) - 1;
@@ -195,16 +181,10 @@ void call_method(char *method) {
         }
     }
     else if (strcmp(method, "split") == 0) {
-        // [Arg(optional), Obj]
-        // Hack: Check if top looks like separator or object
         Object top = pop();
         Object obj;
         char *sep = " ";
         if (top.type == OBJ_STR && sp > 0 && stack[sp-1].type == OBJ_STR) {
-             // Top is Obj? No, Stack order is [Arg, Obj]
-             // So Top is Obj. Below is Arg.
-             // Wait, Compiler emits: 巡(Args) -> 巡(Obj).
-             // Stack: [Arg, Obj]. Top is Obj.
              obj = top;
              Object arg = pop();
              sep = arg.v.s;
@@ -215,13 +195,11 @@ void call_method(char *method) {
         Object lst = make_list();
         if(obj.type!=OBJ_STR) panic("split on non-str");
         char *dup = strdup(obj.v.s);
-        // Special case for " " split (default)
         char *token = strtok(dup, sep);
         while(token) { list_append(lst.v.l, make_str(token)); token = strtok(NULL, sep); }
         push(lst);
     }
     else if (strcmp(method, "join") == 0) {
-        // [List, Sep] -> Top is Sep
         Object sep = pop();
         Object lst = pop();
         if(lst.type!=OBJ_LIST) panic("join on non-list");
@@ -233,24 +211,20 @@ void call_method(char *method) {
         push(make_str(buf));
     }
     else if (strcmp(method, "startswith") == 0) {
-        Object obj = pop(); // Top is Obj
-        Object arg = pop(); // Below is Arg
-        // Only works if compiler pushed Arg then Obj
+        Object obj = pop();
+        Object arg = pop();
         if(strncmp(obj.v.s, arg.v.s, strlen(arg.v.s))==0) push(make_int(1)); else push(make_int(0));
     }
     else if (strcmp(method, "append") == 0) {
-        // [Item, List]
         Object lst = pop();
         Object item = pop();
         list_append(lst.v.l, item);
         push(make_none());
     }
     else if (strcmp(method, "format") == 0) {
-        // [Arg, FmtStr]
         Object fmt = pop();
         Object arg = pop();
         char buf[1024];
-        // Only supports "{}" simple replacement
         char *p = strstr(fmt.v.s, "{}");
         if(p) {
             int pre = p - fmt.v.s;
@@ -262,7 +236,6 @@ void call_method(char *method) {
             push(fmt);
         }
     }
-    // Global functions mapped to CALL
     else if (strcmp(method, "len") == 0) {
         Object o = pop();
         if(o.type==OBJ_LIST) push(make_int(o.v.l->count));
@@ -279,23 +252,9 @@ void call_method(char *method) {
         push(make_str(buf));
     }
     else if (strcmp(method, "read") == 0) {
-        // Assume file handle is mocked or passed?
-        // Actually compiler uses: open(path).read()
-        // We handle 'open' by returning file content immediately (Cheat!)
-        // So 'read' just passes the string through
-        // Or if open returned None, read fails.
     }
     else if (strcmp(method, "open") == 0) {
-        // [Path] -> Returns String Content directly (Simplification)
-        // Compiler code: open(p, 'r', ...).read()
-        // Stack: [Kwargs, Mode, Path] -> Top is Path?
-        // Simplified: Just take path.
-        Object path = pop(); // Path
-        // Consume mode/kwargs if on stack? 
-        // Our compiler PUSHes args. open(p, m, **o)
-        // This is complex. Let's assume Path is at stack-3?
-        // For now, assume top is path, ignore others if type doesn't match?
-        // Hack: Read file from disk
+        Object path = pop();
         FILE *f = fopen(path.v.s, "r");
         if(f) {
             fseek(f, 0, SEEK_END); long fsize = ftell(f); fseek(f, 0, SEEK_SET);
@@ -312,22 +271,14 @@ void call_method(char *method) {
 int main(int argc, char *argv[]) {
     if (argc < 2) return 1;
     
-    // Setup sys.argv (Hardcoded into vars for compiler)
     Object argv_list = make_list();
     list_append(argv_list.v.l, make_str("vm"));
-    if(argc > 2) list_append(argv_list.v.l, make_str(argv[2])); // Target source file
+    if(argc > 2) list_append(argv_list.v.l, make_str(argv[2]));
     
-    // We need to inject 'sys' object with 'argv'
-    // But our compiler accesses `sys.argv`.
-    // In IR: LOAD sys -> GET argv.
-    // So we need 'sys' variable to be a Dict containing 'argv'
     Object sys_mod = make_dict();
     dict_set(sys_mod.v.d, "argv", argv_list);
+    dict_set(sys_mod.v.d, "stderr", make_dict());
     
-    // Also sys.stderr for write
-    dict_set(sys_mod.v.d, "stderr", make_dict()); // Dummy
-    
-    // Init Globals
     strcpy(vars[var_count].name, "sys"); vars[var_count].val = sys_mod; var_count++;
 
     FILE *fp = fopen(argv[1], "r");
@@ -353,7 +304,7 @@ int main(int argc, char *argv[]) {
         strcpy(buf, program[ip]);
         char *cmd = strtok(buf, " ");
         char *arg = strtok(NULL, "");
-        if(arg) { while(*arg==' ') arg++; } // trim
+        if(arg) { while(*arg==' ') arg++; }
         ip++;
 
         if (!cmd || strcmp(cmd, "LABEL") == 0) {}
@@ -369,7 +320,7 @@ int main(int argc, char *argv[]) {
              if(o.type==OBJ_STR) printf("%s\n", o.v.s);
              else printf("%d\n", o.v.i);
         }
-        else if (strcmp(cmd, "ADD") == 0) { // Same as before (omitted for brevity, assume merged)
+        else if (strcmp(cmd, "ADD") == 0) {
              Object b = pop(); Object a = pop();
              if(a.type==OBJ_INT) push(make_int(a.v.i+b.v.i));
              else { 
@@ -385,8 +336,6 @@ int main(int argc, char *argv[]) {
         else if (strcmp(cmd, "LT") == 0) { Object b=pop(); Object a=pop(); push(make_int(a.v.i < b.v.i ? 1:0)); }
         else if (strcmp(cmd, "JUMP") == 0) ip = find_label(arg);
         else if (strcmp(cmd, "JZERO") == 0) { if(pop().v.i == 0) ip = find_label(arg); }
-        
-        // New Opcodes
         else if (strcmp(cmd, "CALL") == 0) call_method(arg);
         else if (strcmp(cmd, "GET") == 0) {
             Object key = pop();
@@ -395,11 +344,10 @@ int main(int argc, char *argv[]) {
             else if(obj.type==OBJ_LIST) push(obj.v.l->items[key.v.i]);
         }
         else if (strcmp(cmd, "SET") == 0) {
-            Object key = pop(); // Key/Index
-            Object obj = pop(); // Target
-            Object val = pop(); // Value (Bottom)
+            Object key = pop();
+            Object obj = pop();
+            Object val = pop();
             if(obj.type==OBJ_DICT) dict_set(obj.v.d, key.v.s, val);
-            // List set unsupported for now
         }
     }
     return 0;
