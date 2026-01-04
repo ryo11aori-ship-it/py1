@@ -1,4 +1,4 @@
-name: Test py1 Compiler
+name: Test py1 Compiler & Self-Hosting
 
 on: [push, pull_request]
 
@@ -14,19 +14,40 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Run Compiler Check
+    # ステップ1: 元祖コンパイラ(Python製)が動くか確認
+    - name: 1. Base Compiler Check (py1.py)
       run: |
-        # コンパイル実行（標準出力を output.py に保存）
-        python py1.py example.py1 > output.py
+        echo "--- Compiling example.py1 with py1.py ---"
+        python py1.py example.py1 > output_base.py
         
-        # コンパイル結果を表示（デバッグ用）
-        echo "=== Generated Python Code ==="
-        cat output.py
-        echo "==========================="
-        
-        # 生成されたコードを実行
-        python output.py
-        python py1.py fizzbuzz.py1 > output_fb.py
-        python output_fb.py
-        python analyze_deps.py
+        echo "--- Running Output ---"
+        python output_base.py
 
+    # ステップ2: コンパイラをコンパイルする（ブートストラップ）
+    # py1.py (親) -> compiler.py1 (子ソース) -> compiler_bootstrapped.py (子コンパイラ)
+    - name: 2. Bootstrap (Compile the Compiler)
+      run: |
+        echo "--- Bootstrapping: py1.py -> compiler.py1 -> compiler_bootstrapped.py ---"
+        python py1.py compiler.py1 > compiler_bootstrapped.py
+        
+        # 生成されたコンパイラの中身をチラ見せ（デバッグ用）
+        echo "--- Generated Compiler Code (First 20 lines) ---"
+        head -n 20 compiler_bootstrapped.py
+        echo "..."
+
+    # ステップ3: 生まれたての新コンパイラで FizzBuzz をコンパイルしてみる
+    # compiler_bootstrapped.py (子) -> fizzbuzz.py1 -> output_fb_v2.py
+    - name: 3. Self-Hosted Compiler Test
+      run: |
+        echo "--- Testing Bootstrapped Compiler ---"
+        # ここで python compiler_bootstrapped.py を呼んでいるのがポイント
+        python compiler_bootstrapped.py fizzbuzz.py1 > output_fb_v2.py
+        
+        echo "--- Generated FizzBuzz Code ---"
+        cat output_fb_v2.py
+
+    # ステップ4: 最終的に生成されたFizzBuzzが正しく動くか実行
+    - name: 4. Run Final FizzBuzz
+      run: |
+        echo "--- Running Final FizzBuzz ---"
+        python output_fb_v2.py
