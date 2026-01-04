@@ -76,6 +76,9 @@
 @v 加 'append'
 @v 範 'range'
 @v 読 'readline'
+@v 警 'error_die'
+@v 言 'msg_txt'
+@v 行 'line_num'
 $
 m s
 m K
