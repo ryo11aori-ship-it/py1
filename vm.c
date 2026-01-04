@@ -3,80 +3,106 @@
 #include <string.h>
 #include <ctype.h>
 
-#define MAX_STACK 1024
-#define MAX_VARS 100
-#define MAX_LABELS 100
-#define MAX_LINES 2048
-#define LINE_BUF_SIZE 256
+#define MAX_STACK 2048
+#define MAX_VARS 512
+#define MAX_LABELS 512
+#define MAX_LINES 4096
+#define LINE_BUF_SIZE 1024
 
-// データ構造
+// --- Type System ---
+typedef enum {
+    OBJ_INT,
+    OBJ_STR
+} ObjType;
+
+typedef struct {
+    ObjType type;
+    union {
+        int i;
+        char *s;
+    } v;
+} Object;
+
+// --- Data Structures ---
+Object stack[MAX_STACK];
+int sp = 0;
+
 typedef struct {
     char name[32];
-    int value;
+    Object val;
 } Variable;
+Variable vars[MAX_VARS];
+int var_count = 0;
 
 typedef struct {
     char name[32];
     int line_num;
 } Label;
-
-// グローバル状態
-int stack[MAX_STACK];
-int sp = 0; // stack pointer
-
-Variable vars[MAX_VARS];
-int var_count = 0;
-
 Label labels[MAX_LABELS];
 int label_count = 0;
 
 char program[MAX_LINES][LINE_BUF_SIZE];
 int prog_size = 0;
 
-// スタック操作
-void push(int val) {
-    if (sp >= MAX_STACK) { fprintf(stderr, "Stack overflow\n"); exit(1); }
-    stack[sp++] = val;
-}
-
-int pop() {
-    if (sp <= 0) { fprintf(stderr, "Stack underflow\n"); exit(1); }
-    return stack[--sp];
-}
-
-// 変数操作
-int get_var(char *name) {
-    for (int i = 0; i < var_count; i++) {
-        if (strcmp(vars[i].name, name) == 0) return vars[i].value;
-    }
-    fprintf(stderr, "Undefined variable: %s\n", name);
+// --- Helpers ---
+void panic(const char *msg) {
+    fprintf(stderr, "Panic: %s\n", msg);
     exit(1);
 }
 
-void set_var(char *name, int val) {
+Object make_int(int v) {
+    Object o; o.type = OBJ_INT; o.v.i = v; return o;
+}
+
+Object make_str(const char *s) {
+    Object o; o.type = OBJ_STR;
+    o.v.s = strdup(s); // Simple heap allocation
+    return o;
+}
+
+// --- Stack Ops ---
+void push(Object obj) {
+    if (sp >= MAX_STACK) panic("Stack overflow");
+    stack[sp++] = obj;
+}
+
+Object pop() {
+    if (sp <= 0) panic("Stack underflow");
+    return stack[--sp];
+}
+
+// --- Variable Ops ---
+Object get_var(char *name) {
+    for (int i = 0; i < var_count; i++) {
+        if (strcmp(vars[i].name, name) == 0) return vars[i].val;
+    }
+    // Undefined var returns INT 0 (or error in strict mode)
+    return make_int(0); 
+}
+
+void set_var(char *name, Object val) {
     for (int i = 0; i < var_count; i++) {
         if (strcmp(vars[i].name, name) == 0) {
-            vars[i].value = val;
+            vars[i].val = val;
             return;
         }
     }
-    // 新規作成
-    if (var_count >= MAX_VARS) { fprintf(stderr, "Var limit reached\n"); exit(1); }
+    if (var_count >= MAX_VARS) panic("Var limit reached");
     strcpy(vars[var_count].name, name);
-    vars[var_count].value = val;
+    vars[var_count].val = val;
     var_count++;
 }
 
-// ラベル検索
+// --- Label Ops ---
 int find_label(char *name) {
     for (int i = 0; i < label_count; i++) {
         if (strcmp(labels[i].name, name) == 0) return labels[i].line_num;
     }
-    fprintf(stderr, "Undefined label: %s\n", name);
-    exit(1);
+    panic("Undefined label");
+    return -1;
 }
 
-// 文字列が数値かどうか判定
+// --- Parser Helper ---
 int is_number(char *s) {
     if (*s == '-' || *s == '+') s++;
     if (!*s) return 0;
@@ -87,6 +113,7 @@ int is_number(char *s) {
     return 1;
 }
 
+// --- VM Main ---
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         printf("Usage: ./vm <ir_file>\n");
@@ -94,21 +121,16 @@ int main(int argc, char *argv[]) {
     }
 
     FILE *fp = fopen(argv[1], "r");
-    if (!fp) {
-        perror("File open error");
-        return 1;
-    }
+    if (!fp) { perror("File open error"); return 1; }
 
-    // 1. 読み込み & ラベルスキャン
+    // 1. Load Program
     char line[LINE_BUF_SIZE];
     while (fgets(line, sizeof(line), fp)) {
-        // 改行削除
         line[strcspn(line, "\n")] = 0;
         if (strlen(line) == 0) continue;
-
+        
         strcpy(program[prog_size], line);
 
-        // ラベル定義を記録 (LABEL L1)
         if (strncmp(line, "LABEL ", 6) == 0) {
             char *label_name = line + 6;
             strcpy(labels[label_count].name, label_name);
@@ -119,61 +141,96 @@ int main(int argc, char *argv[]) {
     }
     fclose(fp);
 
-    // 2. 実行ループ
+    // 2. Execution
     int ip = 0;
     while (ip < prog_size) {
         char buf[LINE_BUF_SIZE];
         strcpy(buf, program[ip]);
         
+        // Split command and argument (Handling spaces in strings is rudimentary)
         char *cmd = strtok(buf, " ");
-        char *arg = strtok(NULL, " ");
+        char *arg = strtok(NULL, ""); // Get the rest
+        if (arg) {
+            // Trim leading spaces from arg
+            while(*arg == ' ') arg++;
+        }
 
-        ip++; // 基本は次へ
+        ip++;
 
-        if (strcmp(cmd, "LABEL") == 0) {
-            // 何もしない
-        } 
+        if (!cmd || strcmp(cmd, "LABEL") == 0) {
+            // No-op
+        }
         else if (strcmp(cmd, "PUSH") == 0) {
-            if (is_number(arg)) {
-                push(atoi(arg));
+            if (arg) {
+                if (is_number(arg)) {
+                    push(make_int(atoi(arg)));
+                } else {
+                    // String literal handling
+                    // If arg is just text, treat as string
+                    push(make_str(arg));
+                }
             } else {
-                // 【修正】文字列の場合もダミー値を積んでおく必要がある
-                // そうしないと次のPRINTでpopしたときにunderflowする
-                push(0);
+                push(make_int(0)); // Empty PUSH
             }
         }
         else if (strcmp(cmd, "STORE") == 0) { set_var(arg, pop()); }
         else if (strcmp(cmd, "LOAD") == 0) { push(get_var(arg)); }
-        else if (strcmp(cmd, "ADD") == 0) { int b=pop(); int a=pop(); push(a+b); }
-        else if (strcmp(cmd, "SUB") == 0) { int b=pop(); int a=pop(); push(a-b); }
-        else if (strcmp(cmd, "MUL") == 0) { int b=pop(); int a=pop(); push(a*b); }
-        else if (strcmp(cmd, "DIV") == 0) { int b=pop(); int a=pop(); push(a/b); }
-        else if (strcmp(cmd, "MOD") == 0) { int b=pop(); int a=pop(); push(a%b); }
-        else if (strcmp(cmd, "EQ") == 0) { int b=pop(); int a=pop(); push(a==b ? 1:0); }
-        else if (strcmp(cmd, "LT") == 0) { int b=pop(); int a=pop(); push(a<b ? 1:0); }
-        else if (strcmp(cmd, "JUMP") == 0) { ip = find_label(arg); }
-        else if (strcmp(cmd, "JZERO") == 0) { if (pop() == 0) ip = find_label(arg); }
         else if (strcmp(cmd, "PRINT") == 0) {
-            // 直前の命令を確認するハック
-            char prev_buf[LINE_BUF_SIZE];
-            // 安全策: ip-2 が範囲内か確認
-            if (ip >= 2) {
-                strcpy(prev_buf, program[ip-2]); 
-                char *p_cmd = strtok(prev_buf, " ");
-                char *p_arg = strtok(NULL, " ");
-                
-                if (p_cmd && strcmp(p_cmd, "PUSH") == 0 && !is_number(p_arg)) {
-                    // 文字列リテラルのPUSHだった場合
-                    pop(); // ダミー(0)を捨てる
-                    printf("%s\n", p_arg);
-                } else {
-                    printf("%d\n", pop());
-                }
+            Object o = pop();
+            if (o.type == OBJ_INT) printf("%d\n", o.v.i);
+            else if (o.type == OBJ_STR) printf("%s\n", o.v.s);
+        }
+        else if (strcmp(cmd, "ADD") == 0) {
+            Object b = pop();
+            Object a = pop();
+            if (a.type == OBJ_INT && b.type == OBJ_INT) {
+                push(make_int(a.v.i + b.v.i));
             } else {
-                 printf("%d\n", pop());
+                // String concatenation (Primitive implementation)
+                char tmp[1024];
+                const char *sa = (a.type == OBJ_STR) ? a.v.s : "TODO_CONV"; // Int->Str conv needed later
+                const char *sb = (b.type == OBJ_STR) ? b.v.s : "TODO_CONV";
+                snprintf(tmp, sizeof(tmp), "%s%s", sa, sb);
+                push(make_str(tmp));
             }
         }
+        else if (strcmp(cmd, "SUB") == 0) {
+            Object b = pop(); Object a = pop();
+            if (a.type == OBJ_INT && b.type == OBJ_INT) push(make_int(a.v.i - b.v.i));
+            else panic("Type error in SUB");
+        }
+        else if (strcmp(cmd, "MUL") == 0) {
+            Object b = pop(); Object a = pop();
+            if (a.type == OBJ_INT && b.type == OBJ_INT) push(make_int(a.v.i * b.v.i));
+            else panic("Type error in MUL");
+        }
+        else if (strcmp(cmd, "DIV") == 0) {
+             Object b = pop(); Object a = pop();
+             if (b.v.i == 0) panic("Div by zero");
+             push(make_int(a.v.i / b.v.i));
+        }
+        else if (strcmp(cmd, "MOD") == 0) {
+             Object b = pop(); Object a = pop();
+             push(make_int(a.v.i % b.v.i));
+        }
+        else if (strcmp(cmd, "EQ") == 0) {
+            Object b = pop(); Object a = pop();
+            int eq = 0;
+            if (a.type != b.type) eq = 0;
+            else if (a.type == OBJ_INT) eq = (a.v.i == b.v.i);
+            else if (a.type == OBJ_STR) eq = (strcmp(a.v.s, b.v.s) == 0);
+            push(make_int(eq ? 1 : 0));
+        }
+        else if (strcmp(cmd, "LT") == 0) {
+            Object b = pop(); Object a = pop();
+            if (a.type == OBJ_INT && b.type == OBJ_INT) push(make_int(a.v.i < b.v.i ? 1 : 0));
+            else push(make_int(0));
+        }
+        else if (strcmp(cmd, "JUMP") == 0) { ip = find_label(arg); }
+        else if (strcmp(cmd, "JZERO") == 0) {
+            Object o = pop();
+            if (o.type == OBJ_INT && o.v.i == 0) ip = find_label(arg);
+        }
     }
-
     return 0;
 }
