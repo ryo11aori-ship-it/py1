@@ -1,7 +1,7 @@
 import sys
 
-# 【重要】標準エラー出力にバージョンを表示（ファイル出力を邪魔しない）
-sys.stderr.write("--- BOOTSTRAP COMPILER v7 (NO CHECKS) RUNNING ---\n")
+# 実行時に必ずログが出るようにする
+sys.stderr.write("DEBUG: Using UNRESTRICTED compiler_gen3.py\n")
 
 def compile(src):
     lines = src.split('\n')
@@ -19,17 +19,20 @@ def compile(src):
             continue
             
         if not in_code:
-            # 定義パート
+            # 定義パート: @v KEY VAL
             if line.startswith('@v'):
                 parts = line.split()
                 if len(parts) >= 3:
                     k = parts[1]
+                    # 値部分はスペースを含めて結合
                     v = " ".join(parts[2:])
-                    # 【修正】長さチェックを完全に削除しました
+                    
+                    # 【重要】長さチェックを削除！
+                    # どんなキー(k)でも無条件で登録する
                     macros[k] = v
         else:
-            # コードパート：マクロ置換
-            # 長いキーから順に置換
+            # コードパート: 置換実行
+            # 長いキーから順に置換して誤爆を防ぐ
             for k in sorted(macros.keys(), key=len, reverse=True):
                 if k in line:
                     line = line.replace(k, macros[k])
