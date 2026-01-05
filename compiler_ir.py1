@@ -1,4 +1,5 @@
 @v s 'sys'
+# 【重要】while定義を2行目に配置
 @v 廻 'while'
 @v 星 'ast'
 @v 表 'print'
@@ -19,16 +20,16 @@
 @v 結 'join'
 @v 塗 'str'
 
-# Misc Vars (ASCII names for safety)
-@v N '"\\n"'
-@v U '"utf-8"'
-@v C '"encoding"'
-@v R '"r"'
-@v M '"Usage: python compiler_ir.py <source_file>\\n"'
-@v X '"$"'
-@v H '"@v"'
+# Misc Vars (Renamed to safe Kanji to avoid Reserved/Len errors)
+@v 区 '"\\n"'
+@v 八 '"utf-8"'
+@v 暗 '"encoding"'
+@v 込 '"r"'
+@v 説 '"Usage: python compiler_ir.py <source_file>\\n"'
+@v 銭 '"$"'
+@v 飾 '"@v"'
 @v 鬱 'str'
-# 【修正箇所】ここが正しく 'chr' になっていることを確認！
+# 【重要】ここを正しい値に戻す
 @v 単 'chr'
 
 # AST Types
@@ -113,7 +114,7 @@
 @v 身 'B'
 @v 旗 'f'
 @v 部 'P'
-@v 頭 'HH'
+@v 頭 'H'
 @v 鍵 'k'
 @v 値 'v'
 @v 真 'real'
@@ -124,7 +125,7 @@
 @v 残 'E'
 @v 点 'Q'
 @v 間 'wa'
-@v 番 'Bnum'
+@v 番 '番'
 @v 新 'NL'
 @v 壱 'L1'
 @v 弐 'L2'
@@ -243,7 +244,7 @@ d 巡(節):
   巡(節.条)
   表(無.形(弐))
   f 項 n 節.体:
-   巡(項)
+   巌(項)
   表(飛.形(壱))
   表(札.形(弐))
 
@@ -277,12 +278,12 @@ d 巡(節):
 
 # Main
 i 寸(s.引) < 2:
- s.誤.書(M)
+ s.誤.書(説)
  s.逝(1)
 
 道 = s.引[1]
-オ = {C: U}
-文 = 開(道, R, **オ).読()
+オ = {暗: 八}
+文 = 開(道, 込, **オ).読()
 列 = 文.裂()
 
 身 = 鬱()
@@ -291,13 +292,12 @@ i 寸(s.引) < 2:
 f 行 n 列:
  素 = 行.削()
  i 旗:
-  身 = 身 + 行 + N
+  身 = 身 + 行 + 区
  e:
-  i 素 == X:
+  i 素 == 銭:
    旗 = 1
-   C
-  
-  i 素.始(H):
+
+  i 素.始(飾):
    部 = 素.分()
    i 寸(部) >= 3:
     鍵 = 部[1]
