@@ -84,6 +84,8 @@ jobs:
         python compiler_ir.py fizzbuzz_while.py1 > fizzbuzz.ir
         cat fizzbuzz.ir
 
+        # ... (前略)
+
     # 7. ネイティブVM (C言語) のビルドと実行
     - name: 7. Native VM Execution (C Implementation)
       run: |
@@ -92,3 +94,13 @@ jobs:
         
         echo "--- Executing FizzBuzz on Native VM ---"
         ./vm fizzbuzz.ir
+
+    # 8. 機能テスト (List, Dict, Methods)
+    - name: 8. Feature Test (List/Dict/Methods)
+      run: |
+        echo "--- Compiling Feature Test ---"
+        python compiler_ir.py feature_test.py1 > features.ir
+        
+        echo "--- Executing Feature Test on Native VM ---"
+        ./vm features.ir
+
