@@ -3,6 +3,7 @@
 @v S 'str'
 @v A 'append'
 @v I 'int'
+@v W 'while'
 
 # Token Types
 @v 名 'NAME'
@@ -24,25 +25,21 @@
 長 = L(ソ)
 計 = 0
 
-循 計 < 長:
- # Get char at index (no slice, use Subscript -> GET)
+W 計 < 長:
  c = ソ[計]
  
- # Skip space
  も c == " ":
   計 = 計 + 1
  
- # Newline (Ignore for this minimal test)
  他:
   も c == "\n":
    計 = 計 + 1
   
-  # Name (Identifier)
   他:
+   # Name
    も c n 英字:
     v = ""
-    # While char is alphanumeric (simplified: just alpha for now)
-    循 c n 英字:
+    W c n 英字:
      v = v + c
      計 = 計 + 1
      も 計 < 長:
@@ -51,11 +48,11 @@
       c = " "
     ト.append(v)
    
-   # Number
    他:
+    # Number
     も c n 数字:
      v = ""
-     循 c n 数字:
+     W c n 数字:
       v = v + c
       計 = 計 + 1
       も 計 < 長:
@@ -64,18 +61,17 @@
        c = " "
      ト.append(v)
     
-    # Symbol
     他:
+     # Symbol
      も c n 記号:
       ト.append(c)
       計 = 計 + 1
      
-     # Unknown
      他:
       計 = 計 + 1
 
 # Output tokens
 i = 0
-循 i < L(ト):
+W i < L(ト):
  P(ト[i])
  i = i + 1
