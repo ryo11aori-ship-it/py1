@@ -43,11 +43,12 @@
 @v 等 'Eq'
 @v 少 'Lt'
 @v 以 'LtE'
-@v 属 'Attribute'
+@v 性 'Attribute'
 @v 字 'Subscript'
 @v 切 'Slice'
 @v 配 'List'
 @v 彙 'Dict'
+@v 入 'In'
 
 # AST Attributes
 @v 価 'value'
@@ -58,7 +59,7 @@
 @v 識 'id'
 @v 類 'args'
 @v 体 'body'
-@v 性 'attr'
+@v 属性 'attr'
 @v ス 'slice'
 @v 中 'elts'
 @v 索 'keys'
@@ -85,6 +86,7 @@
 @v 置 '"SET"'
 @v 束 '"MKLIST {}"'
 @v 集 '"MKDICT {}"'
+@v 包 '"CONTAINS"'
 
 # Misc
 @v 改 '"\\n"'
@@ -96,7 +98,6 @@
 @v 冠 '"@v"'
 @v 鬱 'str'
 @v 単 'chr'
-# 【追加】制御構文 while
 @v 循 'while'
 
 # Vars
@@ -188,6 +189,9 @@ d 巡(節):
    表(負)
   i 確(参, 星.以):
    表(負)
+  # 【追加】In
+  i 確(参, 星.入):
+   表(包)
 
  # Subscript
  i 確(節, 星.字):
@@ -195,16 +199,15 @@ d 巡(節):
   巡(節.ス)
   表(得)
 
- # List Literal [a, b]
+ # List Literal
  i 確(節, 星.配):
   f 素 n 節.中:
    巡(素)
   表(束.形(寸(節.中)))
 
- # Dict Literal {k:v}
+ # Dict Literal
  i 確(節, 星.彙):
   計 = 0
-  # 【修正】 w -> 循
   循 計 < 寸(節.索):
    巡(節.索[計])
    巡(節.直[計])
@@ -246,7 +249,7 @@ d 巡(節):
   
   i 確(節.関, 星.属):
    巡(節.関.価)
-   表(喚.形(節.関.性))
+   表(喚.形(節.関.属性))
 
   i 確(節.関, 星.名):
    仮 = 節.関.識
