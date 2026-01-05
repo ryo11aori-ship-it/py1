@@ -67,12 +67,14 @@ def transpile(source_path):
     symbol_table, body_text = parse_definitions(source_text)
     if had_error:
         sys.exit(1)
+
     stream = io.BytesIO(body_text.encode("utf-8")).readline
     try:
         tokens = list(tokenize.tokenize(stream))
     except tokenize.TokenError as e:
         error(f"Tokenization failed: {e}", 0)
         sys.exit(1)
+
     new_tokens = []
     for tok in tokens:
         t_type = tok.type
@@ -80,40 +82,59 @@ def transpile(source_path):
         t_start = tok.start
         t_end = tok.end
         t_line = tok.line
+
+        # IDENTIFIERS (NAME) -- must be single-char identifiers
         if t_type == tokenize.NAME:
             if len(t_str) != 1:
-                error(f"Invalid identifier '{t_str}'. Only 1-char identifiers allowed.", t_start[0])
-                new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
+                error(
+                    f"Invalid identifier '{t_str}'. Only 1-char identifiers allowed.",
+                    t_start[0]
+                )
+                # keep original token so error context remains
+                new_tokens.append(TokenInfo(t_type, t_str, t_start, t_end, t_line))
                 continue
+
+            # Replace reserved names or symbol table entries
             if t_str in RESERVED_MAP:
                 repl = RESERVED_MAP[t_str]
                 new_tokens.append(TokenInfo(t_type, repl, t_start, t_end, t_line))
             elif t_str in symbol_table:
                 repl = symbol_table[t_str]
+                # symbol_table values are raw strings (without quotes). If you want
+                # them treated as string tokens in the output, ensure they include quotes.
                 new_tokens.append(TokenInfo(t_type, repl, t_start, t_end, t_line))
             else:
                 error(f"Undefined identifier '{t_str}'.", t_start[0])
-                new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
+                new_tokens.append(TokenInfo(t_type, t_str, t_start, t_end, t_line))
+
+        # STRING LITERALS -- must be double-quoted and exactly one character inside
         elif t_type == tokenize.STRING:
+            # Ensure it's a double-quoted literal (source style)
             if not (t_str.startswith('"') and t_str.endswith('"')):
                 error("Only double quotes allowed in body.", t_start[0])
-                new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
+                new_tokens.append(TokenInfo(t_type, t_str, t_start, t_end, t_line))
                 continue
+
             inner = t_str[1:-1]
             if len(inner) != 1:
                 error(f"String literal must be exactly 1 char. Found: '{inner}'", t_start[0])
-                new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
+                new_tokens.append(TokenInfo(t_type, t_str, t_start, t_end, t_line))
                 continue
+
+            # If inner char names a defined symbol, substitute its value (JSON-escaped)
             if inner in symbol_table:
-                # デフォルトの json.dumps (ensure_ascii=True)
-                safe_val = json.dumps(symbol_table[inner])
+                safe_val = json.dumps(symbol_table[inner])  # will include enclosing quotes
                 new_tokens.append(TokenInfo(tokenize.STRING, safe_val, t_start, t_end, t_line))
             else:
-                new_tokens.append(TokenInfo(tokenize.STRING, t_str, t_start, t_end, t_line))
+                new_tokens.append(TokenInfo(t_type, t_str, t_start, t_end, t_line))
+
+        # Everything else: copy through unchanged
         else:
-            new_tokens.append(TokenInfo(tok.type, tok.string, tok.start, tok.end, tok.line))
+            new_tokens.append(TokenInfo(t_type, t_str, t_start, t_end, t_line))
+
     if had_error:
         sys.exit(1)
+
     result = tokenize.untokenize(new_tokens)
     if isinstance(result, bytes):
         compiled = result.decode("utf-8")
