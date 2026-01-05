@@ -19,7 +19,7 @@
 @v 結 'join'
 @v 塗 'str'
 
-# Constants (Kanji 1-char)
+# Constants (Kanji)
 @v 空 '"\\n"'
 @v 八 '"utf-8"'
 @v 号 '"encoding"'
@@ -100,7 +100,7 @@
 @v 集 '"MKDICT {}"'
 @v 包 '"CONTAINS"'
 
-# Vars (Kanji)
+# Vars
 @v 辞 'D'
 @v 節 'n'
 @v 項 'x'
