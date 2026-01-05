@@ -39,7 +39,7 @@ def parse_definitions(source_text):
                 continue
             key = m.group(1)
             raw_value = m.group(2)
-            
+
             # バックスラッシュがある場合のみデコード
             value = raw_value
             if "\\" in raw_value:
@@ -47,7 +47,7 @@ def parse_definitions(source_text):
                     value = codecs.decode(raw_value, "unicode_escape")
                 except Exception:
                     pass
-            
+
             if key in RESERVED_CHARS:
                 error(f"Character '{key}' is reserved by system.", line_num)
             if key in symbol_table:
@@ -107,7 +107,7 @@ def transpile(source_path):
                 error(f"Undefined identifier '{t_str}'.", t_start[0])
                 new_tokens.append(TokenInfo(t_type, t_str, t_start, t_end, t_line))
 
-        # STRING LITERALS -- must be double-quoted and exactly one character inside
+        # STRING LITERALS -- must be double-quoted and non-empty in body
         elif t_type == tokenize.STRING:
             # Ensure it's a double-quoted literal (source style)
             if not (t_str.startswith('"') and t_str.endswith('"')):
@@ -116,12 +116,14 @@ def transpile(source_path):
                 continue
 
             inner = t_str[1:-1]
+            # In your language, body string literals must be exactly one character.
+            # Here we accept non-empty strings in definitions, but for body ensure non-empty.
             if len(inner) < 1:
-                 error("Empty string")
+                error("Empty string", t_start[0])
                 new_tokens.append(TokenInfo(t_type, t_str, t_start, t_end, t_line))
                 continue
 
-            # If inner char names a defined symbol, substitute its value (JSON-escaped)
+            # If inner char (or token) names a defined symbol, substitute its value (JSON-escaped)
             if inner in symbol_table:
                 safe_val = json.dumps(symbol_table[inner])  # will include enclosing quotes
                 new_tokens.append(TokenInfo(tokenize.STRING, safe_val, t_start, t_end, t_line))
