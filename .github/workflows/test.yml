@@ -78,6 +78,8 @@ jobs:
         python output_uni.py
 
     # 6. IRコンパイラのコンパイルと実行
+    - name: Debug files
+      run: ls -la
     - name: 6. IR Compilation (FizzBuzz IR)
       run: |
         python compiler_gen3.py compiler_ir.py1 > compiler_ir.py
@@ -111,7 +113,6 @@ jobs:
         
         echo "--- Running Lexer on VM ---"
         ./vm lexer.ir
-    - name: Debug files
-      run: ls -la
+    
 
 
