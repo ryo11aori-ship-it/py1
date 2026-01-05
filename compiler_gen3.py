@@ -1,7 +1,7 @@
 import sys
 
-# 【重要】実行されているバージョンを確認するためのデバッグ表示
-print("--- BOOTSTRAP COMPILER v6 RUNNING ---")
+# 【重要】標準エラー出力にバージョンを表示（ファイル出力を邪魔しない）
+sys.stderr.write("--- BOOTSTRAP COMPILER v7 (NO CHECKS) RUNNING ---\n")
 
 def compile(src):
     lines = src.split('\n')
@@ -9,7 +9,7 @@ def compile(src):
     
     in_code = False
     
-    for i, line in enumerate(lines):
+    for line in lines:
         line = line.strip()
         if not line:
             continue
@@ -25,12 +25,11 @@ def compile(src):
                 if len(parts) >= 3:
                     k = parts[1]
                     v = " ".join(parts[2:])
-                    # 【修正】チェックを完全撤廃。
-                    # ここでエラーを出さないことで、compiler_ir.py1 の修正を生かす。
+                    # 【修正】長さチェックを完全に削除しました
                     macros[k] = v
         else:
             # コードパート：マクロ置換
-            # 長いキーから順に置換 (誤爆防止)
+            # 長いキーから順に置換
             for k in sorted(macros.keys(), key=len, reverse=True):
                 if k in line:
                     line = line.replace(k, macros[k])
@@ -39,7 +38,7 @@ def compile(src):
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print("Usage: python compiler_gen3.py <file>")
+        sys.stderr.write("Usage: python compiler_gen3.py <file>\n")
         sys.exit(1)
         
     with open(sys.argv[1], 'r', encoding='utf-8') as f:
