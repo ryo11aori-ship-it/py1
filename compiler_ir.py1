@@ -1,4 +1,6 @@
 @v s 'sys'
+# 【修正】while定義をここ(2行目)に配置して解析ズレを回避
+@v 廻 'while'
 @v 星 'ast'
 @v 表 'print'
 @v 開 'open'
@@ -18,8 +20,7 @@
 @v 結 'join'
 @v 塗 'str'
 
-# Keywords (w for while)
-@v w 'while'
+# Misc Vars (Keep original order to avoid diff noise)
 @v 改 '"\\n"'
 @v 符 '"utf-8"'
 @v 号 '"encoding"'
@@ -215,8 +216,8 @@ d 巡(節):
  # Dict Literal
  i 確(節, 星.彙):
   計 = 0
-  # Using w (while)
-  w 計 < 寸(節.索):
+  # Using 廻 (while)
+  廻 計 < 寸(節.索):
    巡(節.索[計])
    巡(節.直[計])
    計 = 計 + 1
