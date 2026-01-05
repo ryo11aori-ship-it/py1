@@ -31,7 +31,7 @@
 @v 鬱 'str'
 # 【重要】ここを正しい値に戻す
 @v 単 'chr'
-@v 区 '単(10)'
+@v 区 '"\n"'
 # AST Types
 @v 根 'Module'
 @v 式 'Expr'
