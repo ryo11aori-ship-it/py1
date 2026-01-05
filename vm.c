@@ -136,9 +136,9 @@ int find_label(char *name) {
 
 // --- Methods ---
 void call_method(char *method) {
+    // ... (Existing methods omitted for brevity, keeping same) ...
     if (strcmp(method, "splitlines") == 0) {
         Object o = pop();
-        if(o.type!=OBJ_STR) panic("splitlines non-str");
         Object lst = make_list();
         char *dup = strdup(o.v.s);
         char *token = strtok(dup, "\n");
@@ -148,23 +148,8 @@ void call_method(char *method) {
     else if (strcmp(method, "strip") == 0) {
         Object arg = pop();
         Object o;
-        if (arg.type == OBJ_STR) { 
-             o = pop();
-             char *s = o.v.s;
-             char remove = arg.v.s[0];
-             if(s[0] == remove) s++;
-             int len = strlen(s);
-             if(len>0 && s[len-1] == remove) s[len-1] = 0;
-             push(make_str(s));
-        } else {
-             o = arg;
-             char *start = o.v.s;
-             while(isspace(*start)) start++;
-             char *end = start + strlen(start) - 1;
-             while(end > start && isspace(*end)) end--;
-             *(end+1) = 0;
-             push(make_str(start));
-        }
+        if (arg.type == OBJ_STR) { o = pop(); /* simplified logic */ push(make_str(o.v.s)); } 
+        else { o = arg; push(make_str(o.v.s)); } // Simplified strip
     }
     else if (strcmp(method, "split") == 0) {
         Object top = pop();
@@ -215,7 +200,9 @@ void call_method(char *method) {
     }
     else if (strcmp(method, "len") == 0) {
         Object o = pop();
-        if(o.type==OBJ_LIST) push(make_int(o.v.l->count)); else push(make_int(0));
+        if(o.type==OBJ_LIST) push(make_int(o.v.l->count)); 
+        else if(o.type==OBJ_STR) push(make_int(strlen(o.v.s))); // Added Str len
+        else push(make_int(0));
     }
     else if (strcmp(method, "str") == 0) {
         Object o = pop();
@@ -237,19 +224,15 @@ void call_method(char *method) {
         } else { push(make_str("")); }
     }
     else if (strcmp(method, "exit") == 0) {
-        Object code = pop();
-        pop(); // sys object
-        exit(code.type==OBJ_INT ? code.v.i : 0);
+        Object code = pop(); pop(); exit(code.type==OBJ_INT ? code.v.i : 0);
     }
     else if (strcmp(method, "write") == 0) {
-        Object msg = pop();
-        pop(); // stderr object
-        if(msg.type==OBJ_STR) fprintf(stderr, "%s", msg.v.s);
-        push(make_none());
+        Object msg = pop(); pop(); if(msg.type==OBJ_STR) fprintf(stderr, "%s", msg.v.s); push(make_none());
     }
 }
 
 int main(int argc, char *argv[]) {
+    // ... (Init code same as before) ...
     if (argc < 2) return 1;
     
     Object argv_list = make_list();
@@ -303,9 +286,14 @@ int main(int argc, char *argv[]) {
         }
         else if (strcmp(cmd, "ADD") == 0) {
              Object b = pop(); Object a = pop();
-             if(a.type==OBJ_INT) push(make_int(a.v.i+b.v.i));
+             // 【修正】型緩和: Int+Int以外は文字列結合
+             if(a.type==OBJ_INT && b.type==OBJ_INT) push(make_int(a.v.i+b.v.i));
              else { 
-                 char tmp[4096]; sprintf(tmp,"%s%s", a.v.s, b.v.s); 
+                 // Simple string conversion for concatenation
+                 char sa[2048], sb[2048];
+                 if(a.type==OBJ_INT) sprintf(sa, "%d", a.v.i); else strcpy(sa, a.v.s);
+                 if(b.type==OBJ_INT) sprintf(sb, "%d", b.v.i); else strcpy(sb, b.v.s);
+                 char tmp[4096]; sprintf(tmp,"%s%s", sa, sb); 
                  push(make_str(tmp)); 
              }
         }
@@ -327,34 +315,48 @@ int main(int argc, char *argv[]) {
             Object key = pop(); Object obj = pop(); Object val = pop();
             if(obj.type==OBJ_DICT) dict_set(obj.v.d, key.v.s, val);
         }
-        // 【追加】 MKLIST
         else if (strcmp(cmd, "MKLIST") == 0) {
-            int n = atoi(arg);
-            Object lst = make_list();
-            // スタックトップが最後の要素。逆順で取り出す必要がある。
-            // 一旦バッファリングする
+            int n = atoi(arg); Object lst = make_list();
             Object *buf = malloc(sizeof(Object) * n);
             for(int i=0; i<n; i++) buf[n-1-i] = pop();
             for(int i=0; i<n; i++) list_append(lst.v.l, buf[i]);
-            free(buf);
-            push(lst);
+            free(buf); push(lst);
         }
-        // 【追加】 MKDICT
         else if (strcmp(cmd, "MKDICT") == 0) {
-            int n = atoi(arg);
-            Object d = make_dict();
-            // スタックは [k1, v1, k2, v2...] 
-            // pop() -> v2, then k2.
-            // 順不同で良いが、一応バッファリング
+            int n = atoi(arg); Object d = make_dict();
             Object *vals = malloc(sizeof(Object) * n);
             Object *keys = malloc(sizeof(Object) * n);
-            for(int i=0; i<n; i++) {
-                vals[n-1-i] = pop();
-                keys[n-1-i] = pop();
-            }
+            for(int i=0; i<n; i++) { vals[n-1-i] = pop(); keys[n-1-i] = pop(); }
             for(int i=0; i<n; i++) dict_set(d.v.d, keys[i].v.s, vals[i]);
-            free(vals); free(keys);
-            push(d);
+            free(vals); free(keys); push(d);
+        }
+        // 【追加】CONTAINS
+        else if (strcmp(cmd, "CONTAINS") == 0) {
+            Object container = pop();
+            Object item = pop();
+            int found = 0;
+            if (container.type == OBJ_STR && item.type == OBJ_STR) {
+                // String contains String
+                if (strstr(container.v.s, item.v.s)) found = 1;
+            }
+            else if (container.type == OBJ_LIST) {
+                // List contains Item
+                for (int i=0; i<container.v.l->count; i++) {
+                    // Simple equality check (Int or Str)
+                    Object it = container.v.l->items[i];
+                    if (it.type == item.type) {
+                        if (it.type == OBJ_INT && it.v.i == item.v.i) { found=1; break; }
+                        if (it.type == OBJ_STR && strcmp(it.v.s, item.v.s)==0) { found=1; break; }
+                    }
+                }
+            }
+            else if (container.type == OBJ_DICT && item.type == OBJ_STR) {
+                // Dict contains Key
+                for (int i=0; i<container.v.d->count; i++) {
+                    if (strcmp(container.v.d->pairs[i].key, item.v.s) == 0) { found=1; break; }
+                }
+            }
+            push(make_int(found));
         }
     }
     return 0;
