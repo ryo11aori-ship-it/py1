@@ -19,7 +19,8 @@
 @v 結 join
 @v 塗 str
 
-# Constants (Strings keep quotes)
+# Keywords and Constants
+@v n in
 @v 空 "\n"
 @v 八 "utf-8"
 @v 号 "encoding"
@@ -30,7 +31,7 @@
 @v 鬱 str
 @v 単 chr
 
-# AST Types (Classes need no quotes)
+# AST Types
 @v 根 Module
 @v 式 Expr
 @v 呼 Call
@@ -77,7 +78,7 @@
 @v 索 keys
 @v 直 values
 
-# IR Instructions (Strings keep quotes)
+# IR Instructions
 @v 積 "PUSH {}"
 @v 加 "ADD"
 @v 差 "SUB"
@@ -100,9 +101,9 @@
 @v 集 "MKDICT {}"
 @v 包 "CONTAINS"
 
-# Vars (Identifier aliases need no quotes)
+# Vars (Renamed n -> nd to avoid conflict with 'in')
 @v 辞 D
-@v 節 n
+@v 節 nd
 @v 項 x
 @v 道 p
 @v 文 t
