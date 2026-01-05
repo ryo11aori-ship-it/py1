@@ -22,23 +22,22 @@ def compile(src):
                 parts = line.split()
                 if len(parts) >= 3:
                     k = parts[1]
-                    # Join the rest as value (in case it contains spaces)
                     v = " ".join(parts[2:])
-                    # 【修正】ここで len(k) != 1 のチェックをしていたのを削除
+                    
+                    # 【復活】厳格な1文字チェック
+                    # Python 3なので漢字(Multi-byte)も len=1 と判定されるため安全
+                    if len(k) != 1:
+                        print(f"Error: Key '{k}' must be exactly 1 char")
+                        sys.exit(1)
+                        
                     macros[k] = v
         else:
             # Code section: replace macros
-            # Sort by length desc to replace longest matches first (safety)
+            # Sort by length desc (safety)
             for k in sorted(macros.keys(), key=len, reverse=True):
-                # Simple replacement (can be risky for substrings but sufficient for py1)
-                # Adding word boundaries logic roughly
                 if k in line:
-                    # Replace whole words only? 
-                    # For py1 simple syntax, direct replace is usually used in bootstrap
-                    # But let's stick to simple replace as before
                     line = line.replace(k, macros[k])
             
-            # Print the processed line
             print(line)
 
 if __name__ == '__main__':
