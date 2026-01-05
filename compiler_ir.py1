@@ -18,7 +18,7 @@
 @v 結 'join'
 @v 塗 'str'
 
-# AST Types
+# AST Types (Class Names)
 @v 根 'Module'
 @v 式 'Expr'
 @v 呼 'Call'
@@ -43,6 +43,7 @@
 @v 等 'Eq'
 @v 少 'Lt'
 @v 以 'LtE'
+# 【修正】Attribute Node -> 性
 @v 性 'Attribute'
 @v 字 'Subscript'
 @v 切 'Slice'
@@ -50,7 +51,7 @@
 @v 彙 'Dict'
 @v 入 'In'
 
-# AST Attributes
+# AST Attributes (Field Names)
 @v 価 'value'
 @v 左 'left'
 @v 右 'right'
@@ -59,6 +60,7 @@
 @v 識 'id'
 @v 類 'args'
 @v 体 'body'
+# 【修正】Attribute.attr -> 属
 @v 属 'attr'
 @v ス 'slice'
 @v 中 'elts'
@@ -189,7 +191,6 @@ d 巡(節):
    表(負)
   i 確(参, 星.以):
    表(負)
-  # 【追加】In
   i 確(参, 星.入):
    表(包)
 
@@ -247,10 +248,15 @@ d 巡(節):
   f 項 n 節.類:
    巡(項)
   
-  i 確(節.関, 星.属):
+  # Method: obj.method(args)
+  # 【修正】 isinstace(..., 星.性) (Attribute Node)
+  i 確(節.関, 星.性):
    巡(節.関.価)
+   # CALL method_name (attr field)
+   # 【修正】 .属 (attr field)
    表(喚.形(節.関.属))
 
+  # Function: func(args)
   i 確(節.関, 星.名):
    仮 = 節.関.識
    真 = 仮
