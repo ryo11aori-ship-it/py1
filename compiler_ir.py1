@@ -1,5 +1,4 @@
 @v s 'sys'
-# 【重要】while定義を2行目に配置
 @v 廻 'while'
 @v 星 'ast'
 @v 表 'print'
@@ -19,8 +18,8 @@
 @v 分 'split'
 @v 結 'join'
 @v 塗 'str'
+@v 単 'chr'
 
-# Misc Vars (Renamed to safe Kanji to avoid Reserved/Len errors)
 @v 八 '"utf-8"'
 @v 暗 '"encoding"'
 @v 込 '"r"'
@@ -28,8 +27,6 @@
 @v 銭 '"$"'
 @v 飾 '"@v"'
 @v 鬱 'str'
-# 文字生成ユーティリティ（本体で評価して使う）
-@v 単 'chr'
 
 # AST Types
 @v 根 'Module'
@@ -58,7 +55,6 @@
 @v 以 'LtE'
 @v 性 'Attribute'
 @v 字 'Subscript'
-@v 切 'Slice'
 @v 配 'List'
 @v 彙 'Dict'
 @v 入 'In'
@@ -78,7 +74,7 @@
 @v 索 'keys'
 @v 直 'values'
 
-# IR Instructions
+# IR
 @v 積 '"PUSH {}"'
 @v 加 '"ADD"'
 @v 差 '"SUB"'
@@ -113,7 +109,6 @@
 @v 身 'B'
 @v 旗 'f'
 @v 部 'P'
-@v 頭 'H'
 @v 鍵 'k'
 @v 値 'v'
 @v 真 'real'
@@ -122,14 +117,6 @@
 @v 巡 'V'
 @v オ 'O'
 @v 残 'E'
-@v 点 'Q'
-@v 間 'wa'
-@v 番 'Bnum'   # 安全な複数文字のPython識別子へマップ
-@v 新 'NL'
-@v 壱 'L1'
-@v 弐 'L2'
-@v 参 'OP'
-@v 計 'i'
 
 $
 m s
@@ -139,10 +126,9 @@ m 星
 辞 = {}
 番 = [0]
 点 = 単(39)
-間 = 単(32)
-区 = 単(10)
+空 = 単(32)
+改 = 単(10)
 
-# Label Generator
 d 新():
  番[0] = 番[0] + 1
  r "L" + 塗(番[0])
