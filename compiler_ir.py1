@@ -19,7 +19,6 @@
 @v 塗 'str'
 
 # Keywords & Misc
-@v 循 'while'
 @v 改 '"\\n"'
 @v 符 '"utf-8"'
 @v 号 '"encoding"'
@@ -129,6 +128,7 @@
 @v 弐 'L2'
 @v 参 'OP'
 @v 計 'i'
+@v 循 'while'
 
 $
 m s
