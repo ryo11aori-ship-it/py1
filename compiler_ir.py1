@@ -1,6 +1,4 @@
 @v s 'sys'
-# 【重要】while定義を2行目に配置 (ASCII予約語回避のため漢字 '反' を使用)
-@v 反 'while'
 @v 星 'ast'
 @v 表 'print'
 @v 開 'open'
@@ -20,16 +18,18 @@
 @v 結 'join'
 @v 塗 'str'
 
-# Misc Vars (Kanji to avoid Reserved Errors)
-@v 改 '"\\n"'
-@v 符 '"utf-8"'
-@v 号 '"encoding"'
-@v 込 '"r"'
-@v 説 '"Usage: python compiler_ir.py <source_file>\\n"'
-@v 銭 '"$"'
-@v 冠 '"@v"'
+# Misc Vars (Safe Lowercase Names)
+# これなら Reserved にも Length Error にもなりません
+@v nl '"\\n"'
+@v u8 '"utf-8"'
+@v enc '"encoding"'
+@v rd '"r"'
+@v usg '"Usage: python compiler_ir.py <source_file>\\n"'
+@v dol '"$"'
+@v at '"@v"'
 @v 鬱 'str'
 @v 単 'chr'
+@v ww 'while'
 
 # AST Types
 @v 根 'Module'
@@ -123,7 +123,7 @@
 @v オ 'O'
 @v 残 'E'
 @v 点 'Q'
-@v 間 'W'
+@v 間 'wa'
 @v 番 'C'
 @v 新 'NL'
 @v 壱 'L1'
@@ -216,8 +216,8 @@ d 巡(節):
  # Dict Literal
  i 確(節, 星.彙):
   計 = 0
-  # Using 反 (while)
-  反 計 < 寸(節.索):
+  # Using ww (while)
+  ww 計 < 寸(節.索):
    巡(節.索[計])
    巡(節.直[計])
    計 = 計 + 1
@@ -278,12 +278,12 @@ d 巡(節):
 
 # Main
 i 寸(s.引) < 2:
- s.誤.書(説)
+ s.誤.書(usg)
  s.逝(1)
 
 道 = s.引[1]
-オ = {号: 符}
-文 = 開(道, 込, **オ).読()
+オ = {enc: u8}
+文 = 開(道, rd, **オ).読()
 列 = 文.裂()
 
 身 = 鬱()
@@ -292,13 +292,13 @@ i 寸(s.引) < 2:
 f 行 n 列:
  素 = 行.削()
  i 旗:
-  身 = 身 + 行 + 改
+  身 = 身 + 行 + nl
  e:
-  i 素 == 銭:
+  i 素 == dol:
    旗 = 1
    C
   
-  i 素.始(冠):
+  i 素.始(at):
    部 = 素.分()
    i 寸(部) >= 3:
     鍵 = 部[1]
