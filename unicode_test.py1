@@ -1,21 +1,15 @@
-@v 表 'print'
-@v 範 'range'
-@v も 'import'
-@v 数 'math'
-@v 円 'pi'
-@v 根 'sqrt'
-@v 和 'sum'
-@v 日 '日本語もOK'
-$
-も 数
+@v 表 print
+@v 数 math
+@v 根 sqrt
+@v 円 pi
+@v 判 isinstance
+@v 浮 float
 
-# 数学関数のテスト
-表(数.根(数.円))
+import math
 
-# 漢字でループと集計
-表(和(範(10)))
+# Test Kanji Variables and Math
+半径 = 10
+面積 = 数.円 * (半径 * 半径)
 
-# 日本語テスト
-# コンパイラが json.dumps で正規化するため、
-# 生成されるコードは print("日本語もOK") となる
-表("日")
+表(面積)
+表(数.根(面積))
