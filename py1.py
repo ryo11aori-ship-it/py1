@@ -116,8 +116,8 @@ def transpile(source_path):
                 continue
 
             inner = t_str[1:-1]
-            if len(inner) != 1:
-                error(f"String literal must be exactly 1 char. Found: '{inner}'", t_start[0])
+            if len(inner) < 1:
+                 error("Empty string")
                 new_tokens.append(TokenInfo(t_type, t_str, t_start, t_end, t_line))
                 continue
 
