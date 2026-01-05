@@ -43,9 +43,11 @@
 @v 等 'Eq'
 @v 少 'Lt'
 @v 以 'LtE'
-@v 属 'Attribute'
+@v 性 'Attribute'
 @v 字 'Subscript'
 @v 切 'Slice'
+@v 配 'List'
+@v 彙 'Dict'
 
 # AST Attributes
 @v 価 'value'
@@ -56,8 +58,11 @@
 @v 識 'id'
 @v 類 'args'
 @v 体 'body'
-@v 性 'attr'
+@v 属性 'attr'
 @v ス 'slice'
+@v 要素 'elts'
+@v 鍵列 'keys'
+@v 値列 'values'
 
 # IR Instructions
 @v 積 '"PUSH {}"'
@@ -78,6 +83,8 @@
 @v 喚 '"CALL {}"'
 @v 得 '"GET"'
 @v 置 '"SET"'
+@v 造列 '"MKLIST {}"'
+@v 造彙 '"MKDICT {}"'
 
 # Misc
 @v 改 '"\\n"'
@@ -118,6 +125,7 @@
 @v 壱 'L1'
 @v 弐 'L2'
 @v 参 'OP'
+@v 計 'i'
 
 $
 m s
@@ -144,19 +152,13 @@ d 巡(節):
 
  # Assignment
  i 確(節, 星.代):
-  # 値を先に積む [Val]
   巡(節.価)
   f 項 n 節.タ:
    i 確(項, 星.名):
-    # STORE x: Pops Val, saves to x
     表(蔵.形(項.識))
    i 確(項, 星.字):
-    # D[k] = v
-    # スタックは [Val] がある状態
-    # 次に [Val, Obj, Key] の順にしたい
-    巡(項.価) # Obj (D)
-    巡(項.ス) # Key (k)
-    # SET: Pops Key, Obj, Val -> Obj[Key]=Val
+    巡(項.価)
+    巡(項.ス)
     表(置)
 
  # Operations
@@ -185,11 +187,26 @@ d 巡(節):
   i 確(参, 星.以):
    表(負)
 
- # Subscript (L[0], D[k])
+ # Subscript
  i 確(節, 星.字):
   巡(節.価)
   巡(節.ス)
   表(得)
+
+ # List Literal [a, b]
+ i 確(節, 星.配):
+  f 素 n 節.要素:
+   巡(素)
+  表(造列.形(寸(節.要素)))
+
+ # Dict Literal {k:v}
+ i 確(節, 星.彙):
+  計 = 0
+  w 計 < 寸(節.鍵列):
+   巡(節.鍵列[計])
+   巡(節.値列[計])
+   計 = 計 + 1
+  表(造彙.形(寸(節.鍵列)))
 
  # Control Flow
  i 確(節, 星.も):
@@ -224,14 +241,10 @@ d 巡(節):
   f 項 n 節.類:
    巡(項)
   
-  # Method: obj.method(args)
-  i 確(節.関, 星.属):
-   巡(節.関.価) # Push object
-   # メソッド名を引数に CALL
-   # 【修正】属性 -> 性
-   表(喚.形(節.関.性))
+  i 確(節.関, 星.性):
+   巡(節.関.価)
+   表(喚.形(節.関.属性))
 
-  # Function: func(args)
   i 確(節.関, 星.名):
    仮 = 節.関.識
    真 = 仮
