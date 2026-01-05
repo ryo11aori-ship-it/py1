@@ -1,77 +1,74 @@
-@v P 'print'
-@v L 'len'
-@v S 'str'
-@v A 'append'
-@v I 'int'
-@v W 'while'
+@v P print
+@v L len
+@v S str
+@v A append
+@v I int
+@v W while
+@v N None
 
 # Token Types
-@v 名 'NAME'
-@v 数 'NUM'
-@v 記 'OP'
-
-# Char sets
-@v 数字 '"0123456789"'
-@v 英字 '"abcdefghijklmnopqrstuvwxyz_"'
-@v 記号 '"+-*/%=:(),[]"'
+@v T_NAME "NAME"
+@v T_NUM "NUM"
+@v T_OP "OP"
 
 # Source
-@v ソ '"def func():\n x = 10"'
-@v ト '[]'
-@v 計 '0'
-@v 長 '0'
+src = "def func():\n x = 10"
+tokens = []
+length = L(src)
+pos = 0
 
-# Tokenizer Loop
-長 = L(ソ)
-計 = 0
+# Char sets (Strings need quotes)
+DIGIT = "0123456789"
+ALPHA = "abcdefghijklmnopqrstuvwxyz_"
+OP = "+-*/%=:(),[]"
 
-W 計 < 長:
- c = ソ[計]
+W pos < length:
+ c = src[pos]
  
- も c == " ":
-  計 = 計 + 1
+ if c == " ":
+  pos = pos + 1
  
- 他:
-  も c == "\n":
-   計 = 計 + 1
+ else:
+  if c == "\n":
+   pos = pos + 1
   
-  他:
+  else:
    # Name
-   も c n 英字:
+   if c in ALPHA:
     v = ""
-    W c n 英字:
+    W c in ALPHA:
      v = v + c
-     計 = 計 + 1
-     も 計 < 長:
-      c = ソ[計]
-     他:
+     pos = pos + 1
+     if pos < length:
+      c = src[pos]
+     else:
       c = " "
-    ト.append(v)
+    tokens.append(v)
    
-   他:
+   else:
     # Number
-    も c n 数字:
+    if c in DIGIT:
      v = ""
-     W c n 数字:
+     W c in DIGIT:
       v = v + c
-      計 = 計 + 1
-      も 計 < 長:
-       c = ソ[計]
-      他:
+      pos = pos + 1
+      if pos < length:
+       c = src[pos]
+      else:
        c = " "
-     ト.append(v)
+     tokens.append(v)
     
-    他:
+    else:
      # Symbol
-     も c n 記号:
-      ト.append(c)
-      計 = 計 + 1
+     if c in OP:
+      tokens.append(c)
+      pos = pos + 1
      
-     他:
-      計 = 計 + 1
+     else:
+      pos = pos + 1
 
 # Output tokens
 i = 0
-W i < L(ト):
- P(ト[i])
+W i < L(tokens):
+ P(tokens[i])
  i = i + 1
