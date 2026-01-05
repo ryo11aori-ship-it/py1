@@ -236,7 +236,6 @@ void call_method(char *method) {
             push(make_str(content));
         } else { push(make_str("")); }
     }
-    // 【追加】exit, write (stderr)
     else if (strcmp(method, "exit") == 0) {
         Object code = pop();
         pop(); // sys object
@@ -246,7 +245,7 @@ void call_method(char *method) {
         Object msg = pop();
         pop(); // stderr object
         if(msg.type==OBJ_STR) fprintf(stderr, "%s", msg.v.s);
-        push(make_none()); // write returns None
+        push(make_none());
     }
 }
 
@@ -327,6 +326,35 @@ int main(int argc, char *argv[]) {
         else if (strcmp(cmd, "SET") == 0) {
             Object key = pop(); Object obj = pop(); Object val = pop();
             if(obj.type==OBJ_DICT) dict_set(obj.v.d, key.v.s, val);
+        }
+        // 【追加】 MKLIST
+        else if (strcmp(cmd, "MKLIST") == 0) {
+            int n = atoi(arg);
+            Object lst = make_list();
+            // スタックトップが最後の要素。逆順で取り出す必要がある。
+            // 一旦バッファリングする
+            Object *buf = malloc(sizeof(Object) * n);
+            for(int i=0; i<n; i++) buf[n-1-i] = pop();
+            for(int i=0; i<n; i++) list_append(lst.v.l, buf[i]);
+            free(buf);
+            push(lst);
+        }
+        // 【追加】 MKDICT
+        else if (strcmp(cmd, "MKDICT") == 0) {
+            int n = atoi(arg);
+            Object d = make_dict();
+            // スタックは [k1, v1, k2, v2...] 
+            // pop() -> v2, then k2.
+            // 順不同で良いが、一応バッファリング
+            Object *vals = malloc(sizeof(Object) * n);
+            Object *keys = malloc(sizeof(Object) * n);
+            for(int i=0; i<n; i++) {
+                vals[n-1-i] = pop();
+                keys[n-1-i] = pop();
+            }
+            for(int i=0; i<n; i++) dict_set(d.v.d, keys[i].v.s, vals[i]);
+            free(vals); free(keys);
+            push(d);
         }
     }
     return 0;
