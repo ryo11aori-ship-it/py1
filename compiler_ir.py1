@@ -98,7 +98,8 @@
 @v 冠 '"@v"'
 @v 鬱 'str'
 @v 単 'chr'
-@v 循 'while'
+# 【修正】whileを二重引用符で定義
+@v 循 "while"
 
 # Vars
 @v 辞 'D'
@@ -151,13 +152,12 @@ d 巡(節):
   表(積.形(節.価))
  
  i 確(節, 星.名):
-  # 【修正】Check D for macros/constants
   仮 = 節.識
   i 仮 n 辞:
    値 = 辞[仮]
-   # Strip quotes if it's a string literal
-   i (値.始(点) + 値.始('"')):
-     # Simple strip of first/last char
+   # 【修正】引用符チェックを二重引用符で行う
+   # "\"" は文字列としての二重引用符
+   i (値.始(点) + 値.始("\"")):
      値 = 値[1:-1]
    表(積.形(値))
   e:
