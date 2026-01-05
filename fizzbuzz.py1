@@ -1,18 +1,19 @@
-@v p 'print'
-@v g 'range'
-@v H 'Fizz'
-@v u 'Buzz'
-@v X 'FizzBuzz'
-@v k 'i'
-$
-f k n g(1, 101):
- i k % 15 == 0:
-  p("X")
- e:
-  i k % 3 == 0:
-   p("H")
-  e:
-   i k % 5 == 0:
-    p("u")
-   e:
-    p(k)
+@v P print
+@v r range
+@v s str
+@v i i
+@v n in
+
+# FizzBuzz
+f i n r(1, 101):
+  msg = ""
+  if i % 3 == 0:
+    msg = msg + "Fizz"
+  
+  if i % 5 == 0:
+    msg = msg + "Buzz"
+  
+  if msg == "":
+    P(i)
+  else:
+    P(msg)
