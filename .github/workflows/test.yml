@@ -40,7 +40,17 @@ jobs:
       run: |
         python compiler_gen2.py compiler.py1 > compiler_gen3.py
         black compiler_gen3.py
-
+    - name: Debug: show generated compiler_gen3.py head
+      run: |
+        echo "---- py1.py (source in repo) ----"
+        sed -n '1,120p' py1.py || true
+        echo "---- compiler_gen2.py (generated) ----"
+        sed -n '1,120p' compiler_gen2.py || true
+        echo "---- compiler_gen3.py (generated) ----"
+        sed -n '1,160p' compiler_gen3.py || true
+        echo "---- grep for 'String len' in repo and generated files ----"
+        grep -n "String len" py1.py compiler_gen2.py compiler_gen3.py || true
+        grep -n "String len" -R . || true
     # 3. 厳密な同一性検証 (SHA256)
     - name: 3. Verify Strict Idempotency (SHA256)
       run: |
