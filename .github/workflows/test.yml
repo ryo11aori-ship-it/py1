@@ -95,12 +95,21 @@ jobs:
         echo "--- Executing FizzBuzz on Native VM ---"
         ./vm fizzbuzz.ir
 
-    # 8. 機能テスト (List, Dict, Methods)
+        # ... (前略)
+
+    # 8. 機能テスト
     - name: 8. Feature Test (List/Dict/Methods)
       run: |
-        echo "--- Compiling Feature Test ---"
         python compiler_ir.py feature_test.py1 > features.ir
-        
-        echo "--- Executing Feature Test on Native VM ---"
         ./vm features.ir
+
+    # 9. Lexer Test (Minimal)
+    - name: 9. Minimal Lexer Test
+      run: |
+        echo "--- Compiling Lexer ---"
+        python compiler_ir.py lexer.py1 > lexer.ir
+        
+        echo "--- Running Lexer on VM ---"
+        ./vm lexer.ir
+
 
