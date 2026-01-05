@@ -21,7 +21,7 @@
 @v 塗 'str'
 
 # Misc Vars (Renamed to safe Kanji to avoid Reserved/Len errors)
-@v 区 '"\\n"'
+@v 区 '単(10)'
 @v 八 '"utf-8"'
 @v 暗 '"encoding"'
 @v 込 '"r"'
@@ -244,7 +244,7 @@ d 巡(節):
   巡(節.条)
   表(無.形(弐))
   f 項 n 節.体:
-   巌(項)
+   巡(項)
   表(飛.形(壱))
   表(札.形(弐))
 
