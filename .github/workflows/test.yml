@@ -87,7 +87,7 @@ jobs:
       run: |
         python compiler_gen3.py unicode_test.py1 > output_uni.py
         python output_uni.py
-
+  
     # 6. IRコンパイラのコンパイルと実行
     - name: Debug files
       run: ls -la
@@ -97,7 +97,10 @@ jobs:
         python compiler_ir.py fizzbuzz_while.py1 > fizzbuzz.ir
         cat fizzbuzz.ir
 
-        # ... (前略)
+        - name: Debug - Check compiler script content
+      run: |
+        cat compiler_gen3.py
+
 
     # 7. ネイティブVM (C言語) のビルドと実行
     - name: 7. Native VM Execution (C Implementation)
