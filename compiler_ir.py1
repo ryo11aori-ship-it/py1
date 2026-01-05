@@ -1,134 +1,134 @@
-@v 系 'sys'
-@v 環 'while'
-@v 星 'ast'
-@v 表 'print'
-@v 開 'open'
-@v 読 'read'
-@v 確 'isinstance'
-@v 逝 'exit'
-@v 書 'write'
-@v 誤 'stderr'
-@v 形 'format'
-@v 寸 'len'
-@v 裂 'splitlines'
-@v 削 'strip'
-@v 引 'argv'
-@v 解 'parse'
-@v 始 'startswith'
-@v 分 'split'
-@v 結 'join'
-@v 塗 'str'
+@v 系 sys
+@v 環 while
+@v 星 ast
+@v 表 print
+@v 開 open
+@v 読 read
+@v 確 isinstance
+@v 逝 exit
+@v 書 write
+@v 誤 stderr
+@v 形 format
+@v 寸 len
+@v 裂 splitlines
+@v 削 strip
+@v 引 argv
+@v 解 parse
+@v 始 startswith
+@v 分 split
+@v 結 join
+@v 塗 str
 
-# Constants (Kanji)
-@v 空 '"\\n"'
-@v 八 '"utf-8"'
-@v 号 '"encoding"'
-@v 見 '"r"'
-@v 説 '"Usage: python compiler_ir.py <source_file>\\n"'
-@v 銭 '"$"'
-@v 冠 '"@v"'
-@v 鬱 'str'
-@v 単 'chr'
+# Constants (Strings keep quotes)
+@v 空 "\n"
+@v 八 "utf-8"
+@v 号 "encoding"
+@v 見 "r"
+@v 説 "Usage: python compiler_ir.py <source_file>\n"
+@v 銭 "$"
+@v 冠 "@v"
+@v 鬱 str
+@v 単 chr
 
-# AST Types
-@v 根 'Module'
-@v 式 'Expr'
-@v 呼 'Call'
-@v 定 'Constant'
-@v 二 'BinOp'
-@v 足 'Add'
-@v 減 'Sub'
-@v 掛 'Mult'
-@v 除 'Div'
-@v 余 'Mod'
-@v 名 'Name'
-@v 代 'Assign'
-@v タ 'targets'
-@v 輪 'While'
-@v 条 'test'
-@v も 'If'
-@v 他 'orelse'
-@v 較 'Compare'
-@v 辺 'left'
-@v 演 'ops'
-@v 子 'comparators'
-@v 等 'Eq'
-@v 少 'Lt'
-@v 以 'LtE'
-@v 性 'Attribute'
-@v 字 'Subscript'
-@v 切 'Slice'
-@v 配 'List'
-@v 彙 'Dict'
-@v 入 'In'
+# AST Types (Classes need no quotes)
+@v 根 Module
+@v 式 Expr
+@v 呼 Call
+@v 定 Constant
+@v 二 BinOp
+@v 足 Add
+@v 減 Sub
+@v 掛 Mult
+@v 除 Div
+@v 余 Mod
+@v 名 Name
+@v 代 Assign
+@v タ targets
+@v 輪 While
+@v 条 test
+@v も If
+@v 他 orelse
+@v 較 Compare
+@v 辺 left
+@v 演 ops
+@v 子 comparators
+@v 等 Eq
+@v 少 Lt
+@v 以 LtE
+@v 性 Attribute
+@v 字 Subscript
+@v 切 Slice
+@v 配 List
+@v 彙 Dict
+@v 入 In
 
 # AST Attributes
-@v 価 'value'
-@v 左 'left'
-@v 右 'right'
-@v 算 'op'
-@v 関 'func'
-@v 識 'id'
-@v 類 'args'
-@v 体 'body'
-@v 属 'attr'
-@v ス 'slice'
-@v 中 'elts'
-@v 索 'keys'
-@v 直 'values'
+@v 価 value
+@v 左 left
+@v 右 right
+@v 算 op
+@v 関 func
+@v 識 id
+@v 類 args
+@v 体 body
+@v 属 attr
+@v ス slice
+@v 中 elts
+@v 索 keys
+@v 直 values
 
-# IR Instructions
-@v 積 '"PUSH {}"'
-@v 加 '"ADD"'
-@v 差 '"SUB"'
-@v 乗 '"MUL"'
-@v 割 '"DIV"'
-@v 剰 '"MOD"'
-@v 印 '"PRINT"'
-@v 刷 '"print"'
-@v 蔵 '"STORE {}"'
-@v 荷 '"LOAD {}"'
-@v 札 '"LABEL {}"'
-@v 飛 '"JUMP {}"'
-@v 無 '"JZERO {}"'
-@v 同 '"EQ"'
-@v 負 '"LT"'
-@v 喚 '"CALL {}"'
-@v 得 '"GET"'
-@v 置 '"SET"'
-@v 束 '"MKLIST {}"'
-@v 集 '"MKDICT {}"'
-@v 包 '"CONTAINS"'
+# IR Instructions (Strings keep quotes)
+@v 積 "PUSH {}"
+@v 加 "ADD"
+@v 差 "SUB"
+@v 乗 "MUL"
+@v 割 "DIV"
+@v 剰 "MOD"
+@v 印 "PRINT"
+@v 刷 "print"
+@v 蔵 "STORE {}"
+@v 荷 "LOAD {}"
+@v 札 "LABEL {}"
+@v 飛 "JUMP {}"
+@v 無 "JZERO {}"
+@v 同 "EQ"
+@v 負 "LT"
+@v 喚 "CALL {}"
+@v 得 "GET"
+@v 置 "SET"
+@v 束 "MKLIST {}"
+@v 集 "MKDICT {}"
+@v 包 "CONTAINS"
 
-# Vars
-@v 辞 'D'
-@v 節 'n'
-@v 項 'x'
-@v 道 'p'
-@v 文 't'
-@v 列 'L'
-@v 行 'l'
-@v 素 'S'
-@v 身 'B'
-@v 旗 'f'
-@v 部 'P'
-@v 頭 'H'
-@v 鍵 'k'
-@v 値 'v'
-@v 真 'R'
-@v 仮 'A'
-@v 木 'T'
-@v 巡 'V'
-@v オ 'O'
-@v 残 'E'
-@v 点 'Q'
-@v 間 'W'
-@v 番 'C'
-@v 新 'N'
-@v 壱 'Y'
-@v 弐 'Z'
-@v 参 'P'
-@v 計 'i'
+# Vars (Identifier aliases need no quotes)
+@v 辞 D
+@v 節 n
+@v 項 x
+@v 道 p
+@v 文 t
+@v 列 L
+@v 行 l
+@v 素 S
+@v 身 B
+@v 旗 f
+@v 部 P
+@v 頭 H
+@v 鍵 k
+@v 値 v
+@v 真 R
+@v 仮 A
+@v 木 T
+@v 巡 V
+@v オ O
+@v 残 E
+@v 点 Q
+@v 間 W
+@v 番 C
+@v 新 N
+@v 壱 Y
+@v 弐 Z
+@v 参 P
+@v 計 i
 
 $
 m 系
