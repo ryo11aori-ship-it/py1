@@ -19,7 +19,7 @@
 @v 結 'join'
 @v 塗 'str'
 
-# Constants (Strict 1-char Kanji)
+# Constants (Kanji 1-char)
 @v 空 '"\\n"'
 @v 八 '"utf-8"'
 @v 号 '"encoding"'
@@ -100,7 +100,7 @@
 @v 集 '"MKDICT {}"'
 @v 包 '"CONTAINS"'
 
-# Vars (Kanji 1-char)
+# Vars (Kanji)
 @v 辞 'D'
 @v 節 'n'
 @v 項 'x'
@@ -215,7 +215,7 @@ d 巡(節):
  # Dict Literal
  i 確(節, 星.彙):
   計 = 0
-  # Using 環 (len=1)
+  # Using 環 (while)
   環 計 < 寸(節.索):
    巡(節.索[計])
    巡(節.直[計])
