@@ -1,26 +1,26 @@
-@v P 'print'
-@v S 'str'
-@v L 'len'
-$
+@v P print
+@v L list
+@v D dict
+@v a append
+@v k keys
+@v i items
+@v l len
+@v r range
+
 # List Test
-l = []
-l.append("A")
-l.append("B")
-P(L(l))
-P(l[0])
-P(l[1])
+lst = []
+lst.append(10)
+lst.append(20)
+P(lst)
 
 # Dict Test
-D = {}
-D["k"] = "val"
-P(D["k"])
+dic = {}
+dic["a"] = 1
+dic["b"] = 2
+P(dic)
 
-# String Join/Split
-s = "x,y"
-parts = s.split(",")
-P(parts[0])
-joined = "-".join(parts)
-P(joined)
-
-# Format
-P("Hello {}".format("World"))
+# Loop Test
+x = 0
+for n in r(0, 5):
+  x = x + n
+P(x)
