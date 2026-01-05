@@ -19,10 +19,7 @@
 @v 分 'split'
 @v 結 'join'
 @v 塗 'str'
-
-# Misc Vars (Keep original order to avoid diff noise)
-@v 改 '\n'
-
+@v 改 '\x0a'
 @v 符 '"utf-8"'
 @v 号 '"encoding"'
 @v モ '"r"'
