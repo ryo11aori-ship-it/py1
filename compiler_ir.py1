@@ -18,6 +18,18 @@
 @v 結 'join'
 @v 塗 'str'
 
+# Keywords & Misc
+@v 循 'while'
+@v 改 '"\\n"'
+@v 符 '"utf-8"'
+@v 号 '"encoding"'
+@v モ '"r"'
+@v メ '"Usage: python compiler_ir.py <source_file>\\n"'
+@v ド '"$"'
+@v 冠 '"@v"'
+@v 鬱 'str'
+@v 単 'chr'
+
 # AST Types
 @v 根 'Module'
 @v 式 'Expr'
@@ -88,19 +100,6 @@
 @v 集 '"MKDICT {}"'
 @v 包 '"CONTAINS"'
 
-# Misc
-@v 改 '"\\n"'
-@v 符 '"utf-8"'
-@v 号 '"encoding"'
-@v モ '"r"'
-@v メ '"Usage: python compiler_ir.py <source_file>\\n"'
-@v ド '"$"'
-@v 冠 '"@v"'
-@v 鬱 'str'
-@v 単 'chr'
-# 【修正】定義はシングルクォートで
-@v 循 'while'
-
 # Vars
 @v 辞 'D'
 @v 節 'n'
@@ -155,7 +154,7 @@ d 巡(節):
   仮 = 節.識
   i 仮 n 辞:
    値 = 辞[仮]
-   # 【修正】コード内ではダブルクォート文字列を使う (エスケープ)
+   # Strip quotes (single or double)
    i (値.始(点) + 値.始("\"")):
      値 = 値[1:-1]
    表(積.形(値))
