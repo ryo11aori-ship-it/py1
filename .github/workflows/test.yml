@@ -111,5 +111,7 @@ jobs:
         
         echo "--- Running Lexer on VM ---"
         ./vm lexer.ir
+    - name: Debug files
+      run: ls -la
 
 
