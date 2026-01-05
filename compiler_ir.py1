@@ -43,7 +43,7 @@
 @v 等 'Eq'
 @v 少 'Lt'
 @v 以 'LtE'
-@v 性 'Attribute'
+@v 属 'Attribute'
 @v 字 'Subscript'
 @v 切 'Slice'
 @v 配 'List'
@@ -58,11 +58,11 @@
 @v 識 'id'
 @v 類 'args'
 @v 体 'body'
-@v 属性 'attr'
+@v 性 'attr'
 @v ス 'slice'
-@v 要素 'elts'
-@v 鍵列 'keys'
-@v 値列 'values'
+@v 中 'elts'
+@v 索 'keys'
+@v 直 'values'
 
 # IR Instructions
 @v 積 '"PUSH {}"'
@@ -83,8 +83,8 @@
 @v 喚 '"CALL {}"'
 @v 得 '"GET"'
 @v 置 '"SET"'
-@v 造列 '"MKLIST {}"'
-@v 造彙 '"MKDICT {}"'
+@v 束 '"MKLIST {}"'
+@v 集 '"MKDICT {}"'
 
 # Misc
 @v 改 '"\\n"'
@@ -195,18 +195,18 @@ d 巡(節):
 
  # List Literal [a, b]
  i 確(節, 星.配):
-  f 素 n 節.要素:
+  f 素 n 節.中:
    巡(素)
-  表(造列.形(寸(節.要素)))
+  表(束.形(寸(節.中)))
 
  # Dict Literal {k:v}
  i 確(節, 星.彙):
   計 = 0
-  w 計 < 寸(節.鍵列):
-   巡(節.鍵列[計])
-   巡(節.値列[計])
+  w 計 < 寸(節.索):
+   巡(節.索[計])
+   巡(節.直[計])
    計 = 計 + 1
-  表(造彙.形(寸(節.鍵列)))
+  表(集.形(寸(節.索)))
 
  # Control Flow
  i 確(節, 星.も):
@@ -241,9 +241,10 @@ d 巡(節):
   f 項 n 節.類:
    巡(項)
   
-  i 確(節.関, 星.性):
+  i 確(節.関, 星.属):
    巡(節.関.価)
-   表(喚.形(節.関.属性))
+   # 属性 -> 性
+   表(喚.形(節.関.性))
 
   i 確(節.関, 星.名):
    仮 = 節.関.識
