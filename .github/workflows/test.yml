@@ -40,7 +40,8 @@ jobs:
       run: |
         python compiler_gen2.py compiler.py1 > compiler_gen3.py
         black compiler_gen3.py
-    - name: Debug: show generated compiler_gen3.py head
+    
+    - name: Debug show generated compiler_gen3.py head
       run: |
         echo "---- py1.py (source in repo) ----"
         sed -n '1,120p' py1.py || true
