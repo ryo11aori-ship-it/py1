@@ -18,8 +18,8 @@
 @v 結 'join'
 @v 塗 'str'
 
-# Keywords (Z for while)
-@v Z 'while'
+# Keywords (w for while)
+@v w 'while'
 @v 改 '"\\n"'
 @v 符 '"utf-8"'
 @v 号 '"encoding"'
@@ -215,8 +215,8 @@ d 巡(節):
  # Dict Literal
  i 確(節, 星.彙):
   計 = 0
-  # Using Z (while)
-  Z 計 < 寸(節.索):
+  # Using w (while)
+  w 計 < 寸(節.索):
    巡(節.索[計])
    巡(節.直[計])
    計 = 計 + 1
