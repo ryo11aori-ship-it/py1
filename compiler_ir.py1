@@ -20,8 +20,9 @@
 @v 結 'join'
 @v 塗 'str'
 
-# Misc Vars (Renamed to safe Kanji to avoid Reserved/Len errors)
-# Error回避のためここで定義せず、Globalでchr(10)として定義する
+# Misc Vars
+# 【修正】区を直接 \n と定義せず、変数名 CODE_NL に置換する
+@v 区 'CODE_NL'
 @v 八 '"utf-8"'
 @v 暗 '"encoding"'
 @v 込 '"r"'
@@ -141,8 +142,8 @@ m 星
 番 = [0]
 点 = 単(39)
 間 = 単(32)
-# ここで改行文字を定義 (chr(10))
-区 = 単(10)
+# 【修正】ここで CODE_NL (区の実体) に改行コードを代入
+CODE_NL = 単(10)
 
 # Label Generator
 d 新():
