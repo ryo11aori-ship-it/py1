@@ -1,0 +1,26 @@
+@v P 'print'
+@v S 'str'
+@v L 'len'
+$
+# List Test
+l = []
+l.append("A")
+l.append("B")
+P(L(l))
+P(l[0])
+P(l[1])
+
+# Dict Test
+D = {}
+D["k"] = "val"
+P(D["k"])
+
+# String Join/Split
+s = "x,y"
+parts = s.split(",")
+P(parts[0])
+joined = "-".join(parts)
+P(joined)
+
+# Format
+P("Hello {}".format("World"))
