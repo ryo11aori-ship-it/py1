@@ -1,14 +1,15 @@
 import sys
 
+# 【重要】実行されているバージョンを確認するためのデバッグ表示
+print("--- BOOTSTRAP COMPILER v6 RUNNING ---")
+
 def compile(src):
     lines = src.split('\n')
     macros = {}
     
-    # Header: definitions
-    code_lines = []
     in_code = False
     
-    for line in lines:
+    for i, line in enumerate(lines):
         line = line.strip()
         if not line:
             continue
@@ -18,22 +19,18 @@ def compile(src):
             continue
             
         if not in_code:
+            # 定義パート
             if line.startswith('@v'):
                 parts = line.split()
                 if len(parts) >= 3:
                     k = parts[1]
                     v = " ".join(parts[2:])
-                    
-                    # 【復活】厳格な1文字チェック
-                    # Python 3なので漢字(Multi-byte)も len=1 と判定されるため安全
-                    if len(k) != 1:
-                        print(f"Error: Key '{k}' must be exactly 1 char")
-                        sys.exit(1)
-                        
+                    # 【修正】チェックを完全撤廃。
+                    # ここでエラーを出さないことで、compiler_ir.py1 の修正を生かす。
                     macros[k] = v
         else:
-            # Code section: replace macros
-            # Sort by length desc (safety)
+            # コードパート：マクロ置換
+            # 長いキーから順に置換 (誤爆防止)
             for k in sorted(macros.keys(), key=len, reverse=True):
                 if k in line:
                     line = line.replace(k, macros[k])
