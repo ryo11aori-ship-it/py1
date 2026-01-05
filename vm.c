@@ -11,14 +11,11 @@
 
 void panic(const char *msg) { fprintf(stderr, "Panic: %s\n", msg); exit(1); }
 
-// --- Type System ---
 typedef enum { OBJ_INT, OBJ_STR, OBJ_LIST, OBJ_DICT, OBJ_NONE } ObjType;
 
-// Forward declarations
 struct List;
 struct Dict;
 
-// Object Definition (Moved to top)
 typedef struct Object {
     ObjType type;
     union {
@@ -29,17 +26,15 @@ typedef struct Object {
     } v;
 } Object;
 
-// List Implementation
 typedef struct List {
     Object *items;
     int count;
     int capacity;
 } List;
 
-// Dict Implementation
 typedef struct {
     char *key;
-    Object val; // Now Object is defined, so this is valid
+    Object val;
 } KVPair;
 
 typedef struct Dict {
@@ -48,15 +43,10 @@ typedef struct Dict {
     int capacity;
 } Dict;
 
-// --- Memory Constructors ---
+// --- Constructors ---
 Object make_int(int v) { Object o; o.type=OBJ_INT; o.v.i=v; return o; }
 Object make_none() { Object o; o.type=OBJ_NONE; return o; }
-
-Object make_str(const char *s) { 
-    Object o; o.type=OBJ_STR; 
-    o.v.s = s ? strdup(s) : strdup(""); 
-    return o; 
-}
+Object make_str(const char *s) { Object o; o.type=OBJ_STR; o.v.s = s ? strdup(s) : strdup(""); return o; }
 
 Object make_list() {
     Object o; o.type=OBJ_LIST;
@@ -74,7 +64,7 @@ Object make_dict() {
     return o;
 }
 
-// --- Data Structures ---
+// --- Globals ---
 Object stack[MAX_STACK];
 int sp = 0;
 
@@ -89,12 +79,10 @@ int label_count = 0;
 char program[MAX_LINES][LINE_BUF_SIZE];
 int prog_size = 0;
 
-// --- Stack Ops ---
+// --- Ops ---
 void push(Object obj) { if(sp>=MAX_STACK) panic("Stack overflow"); stack[sp++] = obj; }
 Object pop() { if(sp<=0) panic("Stack underflow"); return stack[--sp]; }
-Object peek() { if(sp<=0) panic("Stack underflow"); return stack[sp-1]; }
 
-// --- Variable Ops ---
 Object get_var(char *name) {
     for(int i=0; i<var_count; i++) if(strcmp(vars[i].name,name)==0) return vars[i].val;
     if(strcmp(name, "D")==0) { 
@@ -111,7 +99,6 @@ void set_var(char *name, Object val) {
     strcpy(vars[var_count].name,name); vars[var_count].val=val; var_count++;
 }
 
-// --- List/Dict Ops ---
 void list_append(List *l, Object item) {
     if(l->count == l->capacity) {
         l->capacity *= 2;
@@ -138,7 +125,6 @@ Object dict_get(Dict *d, char *key) {
     return make_str(key);
 }
 
-// --- Helpers ---
 int is_number(char *s) {
     if(*s=='-'||*s=='+')s++; if(!*s)return 0;
     while(*s) if(!isdigit(*s++))return 0; return 1;
@@ -148,11 +134,11 @@ int find_label(char *name) {
     return -1;
 }
 
-// --- Built-in Methods ---
+// --- Methods ---
 void call_method(char *method) {
     if (strcmp(method, "splitlines") == 0) {
         Object o = pop();
-        if(o.type!=OBJ_STR) panic("splitlines on non-string");
+        if(o.type!=OBJ_STR) panic("splitlines non-str");
         Object lst = make_list();
         char *dup = strdup(o.v.s);
         char *token = strtok(dup, "\n");
@@ -191,18 +177,14 @@ void call_method(char *method) {
         } else {
              obj = top;
         }
-        
         Object lst = make_list();
-        if(obj.type!=OBJ_STR) panic("split on non-str");
         char *dup = strdup(obj.v.s);
         char *token = strtok(dup, sep);
         while(token) { list_append(lst.v.l, make_str(token)); token = strtok(NULL, sep); }
         push(lst);
     }
     else if (strcmp(method, "join") == 0) {
-        Object sep = pop();
-        Object lst = pop();
-        if(lst.type!=OBJ_LIST) panic("join on non-list");
+        Object sep = pop(); Object lst = pop();
         char buf[4096] = "";
         for(int i=0; i<lst.v.l->count; i++) {
             if(i>0) strcat(buf, sep.v.s);
@@ -211,19 +193,16 @@ void call_method(char *method) {
         push(make_str(buf));
     }
     else if (strcmp(method, "startswith") == 0) {
-        Object obj = pop();
-        Object arg = pop();
+        Object obj = pop(); Object arg = pop();
         if(strncmp(obj.v.s, arg.v.s, strlen(arg.v.s))==0) push(make_int(1)); else push(make_int(0));
     }
     else if (strcmp(method, "append") == 0) {
-        Object lst = pop();
-        Object item = pop();
+        Object lst = pop(); Object item = pop();
         list_append(lst.v.l, item);
         push(make_none());
     }
     else if (strcmp(method, "format") == 0) {
-        Object fmt = pop();
-        Object arg = pop();
+        Object fmt = pop(); Object arg = pop();
         char buf[1024];
         char *p = strstr(fmt.v.s, "{}");
         if(p) {
@@ -232,27 +211,20 @@ void call_method(char *method) {
             if(arg.type==OBJ_INT) sprintf(buf+pre, "%d%s", arg.v.i, p+2);
             else sprintf(buf+pre, "%s%s", arg.v.s, p+2);
             push(make_str(buf));
-        } else {
-            push(fmt);
-        }
+        } else { push(fmt); }
     }
     else if (strcmp(method, "len") == 0) {
         Object o = pop();
-        if(o.type==OBJ_LIST) push(make_int(o.v.l->count));
-        else push(make_int(0));
+        if(o.type==OBJ_LIST) push(make_int(o.v.l->count)); else push(make_int(0));
     }
     else if (strcmp(method, "str") == 0) {
         Object o = pop();
-        if(o.type==OBJ_INT) { char buf[32]; sprintf(buf, "%d", o.v.i); push(make_str(buf)); }
-        else push(o);
+        if(o.type==OBJ_INT) { char buf[32]; sprintf(buf, "%d", o.v.i); push(make_str(buf)); } else push(o);
     }
     else if (strcmp(method, "chr") == 0) {
-        Object o = pop();
-        char buf[2] = { (char)o.v.i, 0 };
-        push(make_str(buf));
+        Object o = pop(); char buf[2] = { (char)o.v.i, 0 }; push(make_str(buf));
     }
-    else if (strcmp(method, "read") == 0) {
-    }
+    else if (strcmp(method, "read") == 0) {}
     else if (strcmp(method, "open") == 0) {
         Object path = pop();
         FILE *f = fopen(path.v.s, "r");
@@ -262,9 +234,19 @@ void call_method(char *method) {
             fread(content, 1, fsize, f); content[fsize] = 0;
             fclose(f);
             push(make_str(content));
-        } else {
-            push(make_str(""));
-        }
+        } else { push(make_str("")); }
+    }
+    // 【追加】exit, write (stderr)
+    else if (strcmp(method, "exit") == 0) {
+        Object code = pop();
+        pop(); // sys object
+        exit(code.type==OBJ_INT ? code.v.i : 0);
+    }
+    else if (strcmp(method, "write") == 0) {
+        Object msg = pop();
+        pop(); // stderr object
+        if(msg.type==OBJ_STR) fprintf(stderr, "%s", msg.v.s);
+        push(make_none()); // write returns None
     }
 }
 
@@ -338,15 +320,12 @@ int main(int argc, char *argv[]) {
         else if (strcmp(cmd, "JZERO") == 0) { if(pop().v.i == 0) ip = find_label(arg); }
         else if (strcmp(cmd, "CALL") == 0) call_method(arg);
         else if (strcmp(cmd, "GET") == 0) {
-            Object key = pop();
-            Object obj = pop();
+            Object key = pop(); Object obj = pop();
             if(obj.type==OBJ_DICT) push(dict_get(obj.v.d, key.v.s));
             else if(obj.type==OBJ_LIST) push(obj.v.l->items[key.v.i]);
         }
         else if (strcmp(cmd, "SET") == 0) {
-            Object key = pop();
-            Object obj = pop();
-            Object val = pop();
+            Object key = pop(); Object obj = pop(); Object val = pop();
             if(obj.type==OBJ_DICT) dict_set(obj.v.d, key.v.s, val);
         }
     }
