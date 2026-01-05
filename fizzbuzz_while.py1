@@ -1,17 +1,23 @@
-@v P 'print'
-$
-# FizzBuzz using while loop
-n = 1
-while n < 16:
- i = n
- if i % 15 == 0:
-  P("FizzBuzz")
- else:
+@v P print
+@v r range
+@v s str
+@v i i
+@v n in
+@v w while
+
+# FizzBuzz (While version)
+i = 1
+w i < 101:
+  msg = ""
   if i % 3 == 0:
-   P("Fizz")
-  else:
-   if i % 5 == 0:
-    P("Buzz")
-   else:
+    msg = msg + "Fizz"
+  
+  if i % 5 == 0:
+    msg = msg + "Buzz"
+  
+  if msg == "":
     P(i)
- n = n + 1
+  else:
+    P(msg)
+  
+  i = i + 1
